@@ -29,6 +29,13 @@ ul{padding-left:1.1em;margin:0}li{font-size:1.75em;line-height:1.4;margin:.45em 
 li b{color:var(--acc)}
 .foot{position:fixed;bottom:2.5vh;left:9vw;right:9vw;display:flex;justify-content:space-between;color:var(--mute);font-size:.95em}
 code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:#ecebe6;padding:.1em .4em;border-radius:5px}
+.arch{display:flex;align-items:center;gap:1.2vw;margin-top:1.5vh;flex-wrap:wrap}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:.9em 1.1em;min-width:9em;text-align:center}
+.box .t{font-weight:600;font-size:1.25em}.box .d{color:var(--mute);font-size:.95em;margin-top:.25em;line-height:1.3}
+.box.acc{border-color:var(--acc);box-shadow:0 0 0 2px rgba(194,65,12,.12)}
+.ar{font-size:1.8em;color:var(--mute)}
+.row2{display:flex;align-items:center;gap:1.2vw;margin-top:2.2vh;color:var(--mute);font-size:1.15em}
+.row2 .box{min-width:8em}
 </style></head><body>
 
 <section class="s on">
@@ -82,6 +89,25 @@ code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:#ecebe6;p
 <li>3.7B takes the one code-writing step and hands back</li>
 <li>375B once <b>narrated an action without calling a tool</b>; the runner now rejects that</li>
 </ul>
+</section>
+
+<section class="s">
+<div class="kicker">Inside the model · the architecture we are building</div>
+<h1>Read the state before the action.</h1>
+<div class="arch">
+<div class="box"><div class="t">prompt tokens</div><div class="d">same bytes to every size</div></div><div class="ar">→</div>
+<div class="box"><div class="t">36 layers</div><div class="d">K2-Horizon-3.7B, dense GQA</div></div><div class="ar">→</div>
+<div class="box acc"><div class="t">h<sub>L</sub> at the last position</div><div class="d">hidden state, 2560-d, per layer</div></div><div class="ar">→</div>
+<div class="box acc"><div class="t">linear probe</div><div class="d">p(this step gets rejected)</div></div><div class="ar">→</div>
+<div class="box"><div class="t">gate</div><div class="d">act · escalate · ask</div></div>
+</div>
+<div class="row2">
+<span>escalation path, later:</span>
+<div class="box"><div class="t">0.9B KV cache</div></div><div class="ar">→</div>
+<div class="box acc"><div class="t">projector</div><div class="d">trained, models frozen</div></div><div class="ar">→</div>
+<div class="box"><div class="t">3.7B KV cache</div><div class="d">continue, don't re-read</div></div>
+</div>
+<p class="big" style="margin-top:2vh;font-size:1.35em;color:var(--mute)">Labels for the probe come from today's traces: every step already carries accepted / rejected and why. Only the probe and the projector are trained; the models never are.</p>
 </section>
 
 <section class="s">
