@@ -1,72 +1,96 @@
 <!doctype html><html><head><meta charset="utf-8"><title>K2 Cascade</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-html,body{margin:0;height:100%;background:#0f1115;color:#e8e8e8;font-family:-apple-system,Helvetica,Arial,sans-serif}
-.s{display:none;height:100vh;padding:6vh 8vw;box-sizing:border-box;flex-direction:column;justify-content:center}
+:root{--bg:#f6f4ef;--ink:#15161a;--mute:#6b6f76;--line:#dcd8cf;--acc:#c2410c;--ok:#15803d;--bad:#b91c1c;--card:#fff}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.s{display:none;height:100vh;padding:7vh 9vw;box-sizing:border-box;flex-direction:column;justify-content:center}
 .s.on{display:flex}
-h1{font-size:3.2em;margin:0 0 .3em;font-weight:700}
-h2{font-size:1.4em;color:#9aa4b2;font-weight:400;margin:0 0 1.2em}
-li{font-size:1.5em;line-height:1.45;margin:.35em 0}
-table{border-collapse:collapse;font-size:1.25em;margin-top:.6em}
-td,th{padding:.35em .9em;border-bottom:1px solid #2a2f3a;text-align:left}
-th{color:#9aa4b2;font-weight:500}
-.hi{color:#7ee787}.lo{color:#ff7b72}.k{color:#79c0ff}
-.foot{position:fixed;bottom:2vh;right:3vw;color:#555;font-size:.9em}
-code{background:#1b1f27;padding:.1em .35em;border-radius:4px;font-size:.9em}
+.kicker{font-size:1.05em;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);font-weight:600;margin-bottom:1.2em}
+h1{font-size:4.2em;line-height:1.05;margin:0 0 .35em;font-weight:700;letter-spacing:-.02em;max-width:14em}
+.sub{font-size:1.7em;color:var(--mute);margin:0 0 1.4em;max-width:30em;line-height:1.35}
+p.big{font-size:1.9em;line-height:1.4;margin:.2em 0;max-width:28em}
+.ladder{display:flex;align-items:flex-end;gap:2.2vw;margin-top:2.5vh}
+.rung{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.2em 1.4em;min-width:11em;box-shadow:0 1px 0 rgba(0,0,0,.03)}
+.rung .n{font-family:'JetBrains Mono',monospace;font-size:2.6em;font-weight:500;letter-spacing:-.02em}
+.rung .w{color:var(--mute);font-size:1.05em;margin-top:.3em}
+.arrow{font-size:2.4em;color:var(--mute);padding-bottom:.9em}
+.stats{display:flex;gap:2.5vw;margin:1vh 0 3.5vh}
+.stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.3em 1.5em}
+.stat .v{font-family:'JetBrains Mono',monospace;font-size:3.6em;font-weight:500;letter-spacing:-.03em;line-height:1}
+.stat .v.ok{color:var(--ok)}.stat .v.acc{color:var(--acc)}
+.stat .l{color:var(--mute);font-size:1.1em;margin-top:.5em;line-height:1.3}
+table{border-collapse:collapse;font-size:1.25em;width:100%}
+th{color:var(--mute);font-weight:500;text-align:left;padding:.4em .6em;border-bottom:1px solid var(--line)}
+td{padding:.45em .6em;border-bottom:1px solid var(--line)}
+td.m{font-family:'JetBrains Mono',monospace;font-size:.92em}
+.ok{color:var(--ok);font-weight:600}.bad{color:var(--bad);font-weight:600}
+ul{padding-left:1.1em;margin:0}li{font-size:1.75em;line-height:1.4;margin:.45em 0;max-width:30em}
+li b{color:var(--acc)}
+.foot{position:fixed;bottom:2.5vh;left:9vw;right:9vw;display:flex;justify-content:space-between;color:var(--mute);font-size:.95em}
+code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:#ecebe6;padding:.1em .4em;border-radius:5px}
 </style></head><body>
 
 <section class="s on">
-<h1>K2 Cascade</h1>
-<h2>Where does the big model's advantage live?</h2>
-<ul>
-<li>Coding agents call the <b>largest</b> model for <b>every</b> step</li>
-<li>Most steps are small: list a directory, read a file, run the tests</li>
-<li>Question: which steps actually need a 375B, and can a small model tell?</li>
-</ul>
+<div class="kicker">HackCMU 2026 · Optimization + IFM</div>
+<h1>Which agent steps actually need a 375B model?</h1>
+<p class="sub">Coding agents call the largest model for every step. Most steps are: list a directory, read a file, run the tests.</p>
+<div class="ladder">
+<div class="rung"><div class="n">0.9B</div><div class="w">on this MacBook</div></div><div class="arrow">→</div>
+<div class="rung"><div class="n">3.7B</div><div class="w">on this MacBook</div></div><div class="arrow">→</div>
+<div class="rung"><div class="n">375B</div><div class="w">IFM API</div></div>
+</div>
 </section>
 
 <section class="s">
-<h1>Why K2 Horizon</h1>
-<h2>Six sizes, 0.9B to 375B, fully open (IFM, Sept 3)</h2>
-<ul>
-<li>One tokenizer, one chat template, one tool-call format, one training recipe</li>
-<li>So <span class="k">model size is the only variable</span></li>
-<li>Our ladder: <b>0.9B</b> and <b>3.7B</b> on this MacBook &rarr; <b>375B</b> via the IFM API</li>
-<li>Each step: smallest model proposes &rarr; verifier checks &rarr; escalate on failure</li>
-<li>Every attempt is one JSONL line: <span class="k">the trace file is the dataset</span></li>
-</ul>
+<div class="kicker">Why K2 Horizon</div>
+<h1>Size is the only variable.</h1>
+<p class="big">Six sizes, one tokenizer, one chat template, one tool-call format, one training recipe. Released fully open on Sept 3.</p>
+<p class="big">Each step goes to the smallest model first. A verifier checks it. On failure, the next size takes over.</p>
+<p class="big">Every attempt is one line in a file. <b style="color:var(--acc)">The trace file is the dataset.</b></p>
 </section>
 
 <section class="s">
-<h1>Nine runs, one task</h1>
-<h2>Two failing tests; implement two CLI flags until all four pass</h2>
+<div class="kicker">Nine runs, one task</div>
+<div class="stats">
+<div class="stat"><div class="v ok">3 / 3</div><div class="l">cascade runs finished, each with exactly one escalation</div></div>
+<div class="stat"><div class="v acc">0</div><div class="l">steps where the 375B was needed for an action</div></div>
+<div class="stat"><div class="v">1</div><div class="l">step that needed the 3.7B: writing the code</div></div>
+</div>
 <table>
-<tr><th>mode</th><th>done</th><th>steps</th><th>escalations</th><th>steps by model</th><th>375B tokens</th><th>wall s</th></tr>
-<tr><td>0.9B only</td><td class="lo">no</td><td>3 then loops</td><td>-</td><td>0.9B:3</td><td>0</td><td>2</td></tr>
-<tr><td>3.7B only</td><td class="hi">yes</td><td>6</td><td>-</td><td>3.7B:6</td><td>0</td><td>23</td></tr>
-<tr><td><b>cascade &times;3</b></td><td class="hi">yes yes yes</td><td>7 / 8 / 6</td><td><b>1 / 1 / 1</b></td><td>0.9B:4-5, 3.7B:3, <b>375B:0</b></td><td>5.6-6.8k (judge only)</td><td>33-43</td></tr>
-<tr><td>375B only &times;4</td><td class="hi">yes &times;4</td><td>5</td><td>-</td><td>375B:5</td><td>6.0-7.3k</td><td>11-12</td></tr>
+<tr><th>mode</th><th>done</th><th>steps</th><th>who did the steps</th><th>375B tokens</th><th>wall</th></tr>
+<tr><td>0.9B only</td><td class="bad">no</td><td>3, then loops</td><td class="m">0.9B ×3</td><td>0</td><td>2 s</td></tr>
+<tr><td>3.7B only</td><td class="ok">yes</td><td>6</td><td class="m">3.7B ×6</td><td>0</td><td>23 s</td></tr>
+<tr><td><b>cascade</b> ×3</td><td class="ok">yes</td><td>6–8</td><td class="m">0.9B ×4–5 · 3.7B ×3 · 375B ×0</td><td>5.6–6.8k, judge only</td><td>33–43 s</td></tr>
+<tr><td>375B only ×4</td><td class="ok">yes</td><td>5</td><td class="m">375B ×5</td><td>6.0–7.3k</td><td>11–12 s</td></tr>
 </table>
-<ul style="margin-top:1em">
-<li>All three sizes follow the <b>same plan</b>. The difference is entirely in <span class="k">arguments and code</span>.</li>
-<li>0.9B picks the right tool every time, invents paths (<code>/workspace</code>), and repeats itself. 3.7B does the one code-writing step. <b>375B never needed for an action.</b></li>
+</section>
+
+<section class="s">
+<div class="kicker">What the traces say</div>
+<h1>Same plan at every size. The gap is in the arguments.</h1>
+<ul>
+<li>All three sizes: run tests → read source → read tests → write → run tests → done</li>
+<li>0.9B picks the <b>right tool every time</b>, then invents paths like <code>/workspace</code> and repeats itself</li>
+<li>3.7B takes the one code-writing step and hands back</li>
+<li>375B once <b>narrated an action without calling a tool</b>; the runner now rejects that</li>
 </ul>
 </section>
 
 <section class="s">
-<h1>What was hard, what's next</h1>
+<div class="kicker">Next</div>
+<h1>Let the small model know its own limits.</h1>
 <ul>
-<li>Upstream llama.cpp doesn't know the architecture: compiled IFM's fork</li>
-<li>No parser exists for K2's <code>&lt;ifm|tool_calls&gt;</code> format: wrote one; small models emit XML regardless of the JSON instruction</li>
-<li>Caught the 375B <i>narrating</i> an action without calling a tool</li>
-<li style="margin-top:.8em"><span class="k">Next:</span> score the 375B's outputs token by token with the 3.7B, then a probe on the 3.7B's hidden state to predict failure <b>before</b> it acts. The small model knows its own limits; the external judge disappears.</li>
+<li>Score the 375B's outputs token by token with the 3.7B: where exactly does the surprise sit?</li>
+<li>Probe the 3.7B's hidden state to predict failure <b>before it acts</b></li>
+<li>If the internal signal matches the external judge, the judge disappears</li>
 </ul>
-<h2 style="margin-top:1.2em">github.com/WuKongAI-CMU/k2-cascade</h2>
+<p class="big" style="margin-top:1.2em;color:var(--mute)">github.com/WuKongAI-CMU/k2-cascade</p>
 </section>
 
-<div class="foot" id="n"></div>
+<div class="foot"><span>K2 Cascade</span><span id="n"></span></div>
 <script>
-const s=[...document.querySelectorAll('.s')];let i=0;
-function go(d){s[i].classList.remove('on');i=(i+d+s.length)%s.length;s[i].classList.add('on');n.textContent=(i+1)+'/'+s.length}
+const s=[...document.querySelectorAll('.s')];let i=0;const n=document.getElementById('n');
+function go(d){s[i].classList.remove('on');i=(i+d+s.length)%s.length;s[i].classList.add('on');n.textContent=(i+1)+' / '+s.length}
 document.addEventListener('keydown',e=>{if(['ArrowRight',' ','PageDown'].includes(e.key))go(1);if(['ArrowLeft','PageUp'].includes(e.key))go(-1)});
-document.addEventListener('click',()=>go(1));n.textContent='1/'+s.length;
+document.addEventListener('click',()=>go(1));n.textContent='1 / '+s.length;
 </script></body></html>
