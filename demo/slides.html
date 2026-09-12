@@ -32,6 +32,13 @@ code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:#ecebe6;p
 </style></head><body>
 
 <section class="s on">
+<div class="kicker">The end state</div>
+<h1>Agents that know what they don't know.</h1>
+<p class="sub">Today every agent step goes to the biggest model, because no model can tell whether it's out of its depth. We think the next capability isn't a bigger model. It's a model that knows its own limits, and only then escalates, delegates, or asks.</p>
+<p class="big">K2 Cascade is the first measurement toward that: <b style="color:var(--acc)">which steps need a big model, and could the small one have known?</b></p>
+</section>
+
+<section class="s">
 <div class="kicker">HackCMU 2026 · Optimization + IFM</div>
 <h1>Which agent steps actually need a 375B model?</h1>
 <p class="sub">Coding agents call the largest model for every step. Most steps are: list a directory, read a file, run the tests.</p>
@@ -79,11 +86,12 @@ code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:#ecebe6;p
 
 <section class="s">
 <div class="kicker">Next</div>
-<h1>Let the small model know its own limits.</h1>
+<h1>Move the signal inside the model.</h1>
 <ul>
-<li>Score the 375B's outputs token by token with the 3.7B: where exactly does the surprise sit?</li>
-<li>Probe the 3.7B's hidden state to predict failure <b>before it acts</b></li>
-<li>If the internal signal matches the external judge, the judge disappears</li>
+<li>Today the "you can't do this step" signal lives outside: rules plus a 375B judge</li>
+<li>Next week: score the 375B's outputs token by token with the 3.7B to map where its advantage sits</li>
+<li>Then: a probe on the 3.7B's hidden state that predicts failure <b>before it acts</b></li>
+<li>When the internal signal matches the external judge, the judge disappears. That's an agent that knows its limits.</li>
 </ul>
 <p class="big" style="margin-top:1.2em;color:var(--mute)">github.com/WuKongAI-CMU/k2-cascade</p>
 </section>
