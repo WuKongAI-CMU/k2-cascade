@@ -37,6 +37,11 @@ code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:#ecebe6;p
 .ar{font-size:1.8em;color:var(--mute)}
 .row2{display:flex;align-items:center;gap:1.2vw;margin-top:2.2vh;color:var(--mute);font-size:1.15em}
 .row2 .box{min-width:8em}
+.rm{border-collapse:collapse;width:100%;font-size:1.15em;margin-top:1vh}
+.rm th{color:var(--mute);font-weight:500;text-align:left;padding:.35em .6em;border-bottom:1px solid var(--line)}
+.rm td{padding:.42em .6em;border-bottom:1px solid var(--line);vertical-align:top}
+.tag{display:inline-block;padding:.12em .55em;border-radius:999px;font-size:.85em;font-weight:600}
+.t-done{background:#dcfce7;color:#166534}.t-now{background:#ffedd5;color:#9a3412}.t-next{background:#e0e7ff;color:#3730a3}.t-later{background:#ecebe6;color:#57534e}
 </style></head><body>
 
 <section class="s on">
@@ -110,6 +115,21 @@ code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:#ecebe6;p
 <div class="box"><div class="t">3.7B KV cache</div><div class="d">continue, don't re-read</div></div>
 </div>
 <p class="big" style="margin-top:2vh;font-size:1.35em;color:var(--mute)">Labels for the probe come from today's traces: every step already carries accepted / rejected and why. Only the probe and the projector are trained; the models never are.</p>
+</section>
+
+<section class="s">
+<div class="kicker">Roadmap · from today's measurement to an agent that knows its limits</div>
+<h1>Six rungs, one number each.</h1>
+<table class="rm">
+<tr><th>#</th><th>question</th><th>where the signal lives</th><th>deliverable</th><th>status</th></tr>
+<tr><td>0</td><td>Which steps need which size?</td><td>outside: rules + 375B judge</td><td>K2 Cascade, 9 labeled runs</td><td><span class="tag t-done">done today</span></td></tr>
+<tr><td>1</td><td>Where does the 375B's advantage sit, token by token?</td><td>3.7B's surprise at 375B output</td><td>surprise map by token role</td><td><span class="tag t-done">done today</span></td></tr>
+<tr><td>1b</td><td>Does surprise predict a rejected step? More tasks?</td><td>post-hoc gate (cf. arXiv 2609.05274)</td><td>AUROC; 4 tasks instead of 1</td><td><span class="tag t-now">running now</span></td></tr>
+<tr><td>2</td><td>Does the small model know <i>before</i> it acts?</td><td>inside: linear probe on hidden state</td><td>pre-action AUROC vs post-hoc</td><td><span class="tag t-next">next week</span></td></tr>
+<tr><td>3</td><td>Can the internal signal replace the judge?</td><td>probe-driven escalation</td><td>success rate, escalations</td><td><span class="tag t-next">2 weeks</span></td></tr>
+<tr><td>4</td><td>Can the big model read the small one's state directly?</td><td>KV projector, models frozen</td><td>continue vs re-read</td><td><span class="tag t-later">1 month</span></td></tr>
+<tr><td>5</td><td>How do self-knowing agents talk to each other?</td><td>state inside a trust domain, language across</td><td>—</td><td><span class="tag t-later">direction</span></td></tr>
+</table>
 </section>
 
 <section class="s">
