@@ -1,9 +1,24 @@
-# K2 Cascade
+# K2 Cascade: where does the big model's advantage live?
 
-**Which agent steps actually need a 375B model?** A per-step cascade runner across the K2 Horizon family
-(0.9B and 3.7B on a laptop via llama.cpp, 375B via the IFM API), plus the labeled step traces it produces.
+Agents call the largest model for every step. We ran the same coding task through K2 Horizon 0.9B, 3.7B and
+375B step by step and labeled which size each step actually needed. K2 Horizon's six sizes share one tokenizer,
+one chat template, one tool-call format and one training recipe, so model size is the only variable, which makes
+it the first open family where you can ask precisely: what does the 375B know that the 3.7B does not, and can the
+small model tell before it acts?
 
 HackCMU 2026 · Track: Optimization + IFM · built in the 24 hours of the event.
+
+## What the traces show
+
+All three sizes follow the same macro plan: run tests, read source, read tests, write, run tests, finish.
+The difference is entirely in the arguments. The 0.9B picks the right tool every time but invents paths
+(`/workspace`, `/project`, `/task`) and loops; the 3.7B takes over at the one code-writing step; the 375B is never
+needed for an action. On this task the big model's advantage lives in argument and code tokens, not in tool choice.
+
+Next: score the 375B's outputs token by token with the 3.7B (teacher forcing) to map where the surprise
+concentrates (closest prior: Grotov & Malykh, arXiv 2609.05274, who do this for Qwen3 and use it as a post-hoc gate);
+then train a linear probe on the 3.7B's hidden state to predict, *before* it acts, whether the step will be rejected.
+If the pre-action signal matches the post-hoc judge, the small model knows its own limits and the external judge disappears.
 
 ## The idea
 
