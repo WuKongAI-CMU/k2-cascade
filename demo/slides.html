@@ -65,7 +65,7 @@ code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:#ecebe6;p
 <section class="s">
 <div class="kicker">Why K2 Horizon</div>
 <h1>Size is the only variable.</h1>
-<p class="big">Six sizes, one tokenizer, one chat template, one tool-call format, one training recipe. Released fully open on Sept 3.</p>
+<p class="big">Six sizes, one training recipe, one chat template, one tool-call format. From 3.7B up, one tokenizer (250k vocab); the 0.9B has its own 64k vocab. Released fully open on Sept 3.</p>
 <p class="big">Each step goes to the smallest model first. A verifier checks it. On failure, the next size takes over.</p>
 <p class="big">Every attempt is one line in a file. <b style="color:var(--acc)">The trace file is the dataset.</b></p>
 </section>
@@ -95,6 +95,7 @@ code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:#ecebe6;p
 <li>3.7B takes the one code-writing step and hands back</li>
 <li>375B once <b>narrated an action without calling a tool</b>; the runner now rejects that</li>
 <li>Scoring the 375B's steps with the 3.7B (teacher forcing, 2,328 tokens): <b>0.01 nats/token on tool arguments</b>, same as its own output. The surprise is in the prose, not the actions.</li>
+<li>Three more tasks, run after the deadline: <b>csv-stats</b> solved by the 0.9B alone, <b>slug-bug</b> needed the 3.7B, <b>cli-flag</b> needed the 375B for 3–5 steps. Three tasks, three rungs.</li>
 </ul>
 </section>
 

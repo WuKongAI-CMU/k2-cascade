@@ -1,8 +1,8 @@
 # K2 Cascade: where does the big model's advantage live?
 
 Agents call the largest model for every step. We ran the same coding task through K2 Horizon 0.9B, 3.7B and
-375B step by step and labeled which size each step actually needed. K2 Horizon's six sizes share one tokenizer,
-one chat template, one tool-call format and one training recipe, so model size is the only variable, which makes
+375B step by step and labeled which size each step actually needed. K2 Horizon's six sizes share one training recipe,
+one chat template and one tool-call format, and from 3.7B up one tokenizer (250k vocab; the 0.9B has its own 64k vocab), so model size is close to the only variable, which makes
 it the first open family where you can ask precisely: what does the 375B know that the 3.7B does not, and can the
 small model tell before it acts?
 
@@ -29,8 +29,8 @@ If it fails after one retry, the next model up takes the step and keeps control 
 Every attempt, accepted or rejected, is one JSONL line: model, step, tokens, latency, verdict, reason, thinking,
 tool calls, judge verdict, and the messages the model saw. **The trace file is the dataset.**
 
-Why K2 Horizon: six sizes, one tokenizer, one chat template, one tool-call format, one training recipe.
-Size is the only variable.
+Why K2 Horizon: six sizes, one training recipe, one chat template, one tool-call format; from 3.7B up one tokenizer
+(250,624 vocab), while the 0.9B has its own 64,256 vocab. Size is close to the only variable.
 
 ## What we measured (one task, 9 runs)
 
@@ -91,3 +91,18 @@ with no API; `--no-judge` drops the 375B yes/no check.
 - Per-step cascading is not new (STEPWISE, R2V-Agent, TwinRouterBench, Replay Gap, all 2026). What is new here is the
   single-family ladder from 0.9B to 375B and per-attempt traces obtained by running, not replaying.
 - The `/workspace/` path habit of the small models is normalized in `tools.py`; without that they loop on path errors.
+
+## More tasks (added after the deadline)
+
+Three more small tasks, each run twice in `cascade` and twice in `large` (one `large` run of csv-stats was cut off by a process restart).
+
+| task | cascade: done / steps / escalations / who | large: done / steps |
+|---|---|---|
+| csv-stats (extend a summarizer) | yes / 6 / 0 / 0.9B alone · yes / 7 / 1 / 0.9B:4, 3.7B:3 | yes / 5 · yes / 7 |
+| slug-bug (fix slugify) | yes / 8 / 2 / 0.9B:2, 3.7B:6 · yes / 7 / 1 / 0.9B:4, 3.7B:3 | yes / 5 · yes / 5 |
+| cli-flag (argparse flags) | yes / 5 / 2 / 0.9B:1, 3.7B:1, **375B:3** · yes / 13 / 4 / 0.9B:3, 3.7B:5, **375B:5** | yes / 5 |
+
+Three tasks, three rungs: the 0.9B alone finishes csv-stats, slug-bug needs the 3.7B, cli-flag is the first task where the 375B is needed for actions.
+Rejected small-model attempts across these runs: 0.9B repeat_call ×10, judge_no ×5, unknown tool ×2; 3.7B repeat_call ×5, judge_no ×3.
+
+Note on tokenizers: the 0.9B uses a 64,256-token vocab with BOS `<|begin_of_text|>`; 3.7B, 7B and 375B use a 250,624-token vocab with BOS `<|ifm|begin_of_text|>`. Our renderer sends the `<|ifm|begin_of_text|>` string to the 0.9B as well; it still tool-calls correctly, but the 0.9B rung is not a pure size comparison.
