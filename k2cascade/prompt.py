@@ -40,7 +40,7 @@ def render(
     tools: list[dict[str, Any]] | None = None,
     *,
     reasoning_effort: str = "low",
-    tool_call_format: str = "json",
+    tool_call_format: str = "xml",
     add_generation_prompt: bool = True,
 ) -> str:
     """Return the full prompt string (including BOS) for llama-server /completion."""
