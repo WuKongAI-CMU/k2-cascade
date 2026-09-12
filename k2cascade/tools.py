@@ -33,6 +33,11 @@ def _trunc(s: str) -> str:
 
 
 def _safe(cwd: Path, rel: str) -> Path:
+    # Small K2 models habitually write /workspace/<file>; treat that (and the real cwd) as the project root.
+    for prefix in ("/workspace/", str(cwd.resolve()) + "/"):
+        if rel.startswith(prefix):
+            rel = rel[len(prefix):]
+            break
     p = (cwd / rel).resolve()
     if cwd.resolve() not in p.parents and p != cwd.resolve():
         raise ValueError(f"path escapes project dir: {rel}")
