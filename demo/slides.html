@@ -88,6 +88,7 @@ code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:#ecebe6;p
 <li>0.9B picks the <b>right tool every time</b>, then invents paths like <code>/workspace</code> and repeats itself</li>
 <li>3.7B takes the one code-writing step and hands back</li>
 <li>375B once <b>narrated an action without calling a tool</b>; the runner now rejects that</li>
+<li>Scoring the 375B's steps with the 3.7B (teacher forcing, 2,328 tokens): <b>0.01 nats/token on tool arguments</b>, same as its own output. The surprise is in the prose, not the actions.</li>
 </ul>
 </section>
 
