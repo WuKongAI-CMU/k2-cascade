@@ -94,13 +94,13 @@ with no API; `--no-judge` drops the 375B yes/no check.
 
 ## More tasks (added after the deadline)
 
-Three more small tasks, each run twice in `cascade` and twice in `large` (one `large` run of csv-stats was cut off by a process restart).
+Three more small tasks, each run twice in `cascade` and twice in `large` (the second `large` run of cli-flag was cut off by a process restart).
 
 | task | cascade: done / steps / escalations / who | large: done / steps |
 |---|---|---|
 | csv-stats (extend a summarizer) | yes / 6 / 0 / 0.9B alone · yes / 7 / 1 / 0.9B:4, 3.7B:3 | yes / 5 · yes / 7 |
 | slug-bug (fix slugify) | yes / 8 / 2 / 0.9B:2, 3.7B:6 · yes / 7 / 1 / 0.9B:4, 3.7B:3 | yes / 5 · yes / 5 |
-| cli-flag (argparse flags) | yes / 5 / 2 / 0.9B:1, 3.7B:1, **375B:3** · yes / 13 / 4 / 0.9B:3, 3.7B:5, **375B:5** | yes / 5 |
+| cli-flag (argparse flags) | yes / 5 / 2 / 0.9B:1, 3.7B:1, **375B:3** · yes / 13 / 4 / 0.9B:3, 3.7B:5, **375B:5** | yes / 5 · (cut off) |
 
 Three tasks, three rungs: the 0.9B alone finishes csv-stats, slug-bug needs the 3.7B, cli-flag is the first task where the 375B is needed for actions.
 Rejected small-model attempts across these runs: 0.9B repeat_call ×10, judge_no ×5, unknown tool ×2; 3.7B repeat_call ×5, judge_no ×3.
