@@ -12,13 +12,25 @@ from .local import Usage
 from .parse import Parsed
 
 DEFAULT_MODEL = "IFM/K2-Horizon-375B-A23B"
+KEY_FILE = os.path.expanduser("~/.config/ifm/env")
+
+
+def _key_from_file() -> str | None:
+    try:
+        for line in open(KEY_FILE):
+            line = line.strip()
+            if line.startswith("IFM_API_KEY="):
+                return line.split("=", 1)[1].strip().strip('"')
+    except FileNotFoundError:
+        return None
+    return None
 
 
 class CloudK2:
     def __init__(self, model: str = DEFAULT_MODEL, base_url: str = "https://api.ifm.ai/v1", name: str = "k2-375b", timeout: float = 600):
-        key = os.environ.get("IFM_API_KEY")
+        key = os.environ.get("IFM_API_KEY") or _key_from_file()
         if not key:
-            raise RuntimeError("IFM_API_KEY not set")
+            raise RuntimeError("IFM_API_KEY not set and ~/.config/ifm/env has no IFM_API_KEY line")
         self.model, self.name = model, name
         self.client = httpx.Client(base_url=base_url, timeout=timeout, headers={"Authorization": f"Bearer {key}"})
 
