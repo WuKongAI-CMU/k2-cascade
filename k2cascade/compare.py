@@ -12,6 +12,9 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
+LARGE = "k2-375b"
+JUDGE = "k2-375b-judge"
+
 
 def load(path: Path):
     steps, summary = [], None
@@ -27,28 +30,30 @@ def load(path: Path):
 
 
 def main(paths: list[str]) -> None:
-    con = Console()
-    t = Table(title="K2 Cascade: same task, three ways")
-    for c in ["run", "mode", "done", "steps", "escalated", "small ok%", "tokens small", "tokens 375B", "sec small", "sec 375B"]:
+    con = Console(width=150)
+    t = Table(title="K2 Cascade: same task, one row per run")
+    for c in ["file", "mode", "done", "steps", "escal.", "steps by model", "local tok", "375B tok", "judge tok", "local s", "375B s", "judge s"]:
         t.add_column(c)
     reasons: dict[str, Counter] = defaultdict(Counter)
     for p in paths:
         steps, s = load(Path(p))
         if not s:
             continue
-        small_attempts = [r for r in steps if not r.get("escalated") and r["model"] != "k2-375b"]
-        small_ok = sum(1 for r in small_attempts if r["ok"])
-        pct = f"{100 * small_ok / len(small_attempts):.0f}%" if small_attempts else "-"
-        tok = s["tokens"]; ms = s["ms"]
-        t.add_row(s["run_id"], s["mode"], "yes" if s["done"] else "no", str(s["steps"]), str(s["escalations"]), pct,
-                  str(sum(v for k, v in tok.items() if k != "k2-375b")), str(tok.get("k2-375b", 0)),
-                  f"{sum(v for k, v in ms.items() if k != 'k2-375b') / 1000:.0f}", f"{ms.get('k2-375b', 0) / 1000:.0f}")
-        for r in small_attempts:
-            if not r["ok"]:
-                reasons[s["mode"]][r["reason"]] += 1
+        accepted = [r for r in steps if r["ok"]]
+        by_model = Counter(r["model"] for r in accepted)
+        tok, ms = s["tokens"], s["ms"]
+        local_tok = sum(v for k, v in tok.items() if k not in (LARGE, JUDGE))
+        local_ms = sum(v for k, v in ms.items() if k not in (LARGE, JUDGE))
+        t.add_row(Path(p).stem, s["mode"], "yes" if s["done"] else "no", str(s["steps"]), str(s["escalations"]),
+                  ", ".join(f"{k}:{v}" for k, v in sorted(by_model.items())),
+                  str(local_tok), str(tok.get(LARGE, 0)), str(tok.get(JUDGE, 0)),
+                  f"{local_ms / 1000:.0f}", f"{ms.get(LARGE, 0) / 1000:.0f}", f"{ms.get(JUDGE, 0) / 1000:.0f}")
+        for r in steps:
+            if not r["ok"] and r["model"] != LARGE:
+                reasons[r["model"]][r["reason"]] += 1
     con.print(t)
-    for mode, c in reasons.items():
-        con.print(f"[bold]{mode}[/bold] small-model failure reasons: " + ", ".join(f"{k} x{v}" for k, v in c.most_common()))
+    for model, c in sorted(reasons.items()):
+        con.print(f"[bold]{model}[/bold] rejected attempts: " + ", ".join(f"{k} x{v}" for k, v in c.most_common()))
 
 
 if __name__ == "__main__":

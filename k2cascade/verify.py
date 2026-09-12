@@ -12,7 +12,11 @@ def check(step: Parsed, history_calls: list[dict[str, Any]]) -> tuple[bool, str]
     if not step.ok:
         return False, "parse:" + step.parse_errors[0].split(":")[0]
     if not step.tool_calls:
-        return True, "final"
+        # A step must either act or claim completion. Narrated intent ("I'll run the tests") with no call is not a step.
+        text = step.content.lower()
+        if any(w in text for w in ("done", "pass", "complete", "implemented", "fixed", "finished", "summary")) and not text.startswith(("i'll", "let me", "i will", "first")):
+            return True, "final"
+        return False, "no_action"
     if len(step.tool_calls) > 3:
         return False, "too_many_calls"
     for c in step.tool_calls:

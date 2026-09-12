@@ -46,7 +46,7 @@ def run(task: str, cwd: Path, *, ladder: list, mode: str = "cascade", trace_path
         chosen = None
         attempts = []
         if mode == "large":
-            order = [(large, 0)]
+            order = [(large, i) for i in range(retries + 1)]
         elif mode == "small":
             order = [(small, i) for i in range(retries + 1)]
         else:

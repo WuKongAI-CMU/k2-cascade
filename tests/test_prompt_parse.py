@@ -68,3 +68,9 @@ def test_parse_xml_write_file_multiline_content():
 def test_render_default_is_xml_format():
     p = render([{"role": "user", "content": "hi"}], TOOLS)
     assert "<ifm|arg_key>$PARAMETER_NAME</ifm|arg_key>" in p
+
+
+def test_verify_rejects_narrated_intent_without_call():
+    from k2cascade.verify import check
+    assert check(parse("</ifm|think>I'll start by running the test suite."), []) == (False, "no_action")
+    assert check(parse("</ifm|think>All 4 tests pass; the flags are implemented."), []) == (True, "final")
