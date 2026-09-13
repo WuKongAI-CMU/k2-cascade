@@ -1,0 +1,102 @@
+{
+  "n": 113,
+  "n_rejected": 43,
+  "features": {
+    "mean": {
+      "auroc": 0.346843853820598,
+      "lo": 0.24414303918445365,
+      "hi": 0.4590633694125752,
+      "auroc_flipped": 0.653156146179402,
+      "n": 113
+    },
+    "max": {
+      "auroc": 0.3920265780730897,
+      "lo": 0.2796780684104628,
+      "hi": 0.5072694657573174,
+      "auroc_flipped": 0.6079734219269103,
+      "n": 113
+    },
+    "mean_action": {
+      "auroc": 0.3302325581395349,
+      "lo": 0.23270896520536866,
+      "hi": 0.4357865239881138,
+      "auroc_flipped": 0.6697674418604651,
+      "n": 108
+    },
+    "mean_think": {
+      "auroc": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "auroc_flipped": 0.0,
+      "n": 4
+    },
+    "mean_prose": {
+      "auroc": 0.39335548172757473,
+      "lo": 0.29832902880808265,
+      "hi": 0.4977000012326099,
+      "auroc_flipped": 0.6066445182724253,
+      "n": 113
+    },
+    "mean_markup": {
+      "auroc": 0.35614617940199333,
+      "lo": 0.25348345662299154,
+      "hi": 0.46971534279673804,
+      "auroc_flipped": 0.6438538205980067,
+      "n": 113
+    },
+    "sum": {
+      "auroc": 0.35448504983388707,
+      "lo": 0.24277046152046153,
+      "hi": 0.47196444432359913,
+      "auroc_flipped": 0.6455149501661129,
+      "n": 113
+    },
+    "n_tokens": {
+      "auroc": 0.5403654485049834,
+      "lo": 0.43534620271033314,
+      "hi": 0.6439900763404954,
+      "auroc_flipped": 0.45963455149501664,
+      "n": 113
+    }
+  },
+  "best_feature": "mean_action",
+  "scorer": "0.9b",
+  "model_path": "/Users/peter/models/k2/0.9b-mlx-8bit",
+  "trace_model": "k2-0.9b",
+  "effort": "low",
+  "traces": [
+    "/Users/peter/projects/k2-cascade/traces/cascade-1.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/cascade-2.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/cascade-3.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/cascade-4.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/cascade-5.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/cascade-local.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/cli-flag-cascade-1.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/cli-flag-cascade-2.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/cli-flag-large-1.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/cli-flag-large-2.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/csv-stats-cascade-1.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/csv-stats-cascade-2.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/csv-stats-large-1.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/csv-stats-large-2.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/large-1.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/large-2.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/large-3.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/large-4.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/large-5.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/large-6.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/large-7.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/slug-bug-cascade-1.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/slug-bug-cascade-2.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/slug-bug-large-1.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/slug-bug-large-2.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/smoke-0.9b.jsonl",
+    "/Users/peter/projects/k2-cascade/traces/smoke-3.7b.jsonl"
+  ],
+  "tokens_seen": 169861,
+  "forward_seconds": 72.54267041699677,
+  "tok_per_s": 2341.5322185354994,
+  "wall_seconds": 72.94569612500072,
+  "peak_mem_gb": 2.0442936159670353,
+  "best_sign": "low_surprise_rejects"
+}

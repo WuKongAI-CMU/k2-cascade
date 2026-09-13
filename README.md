@@ -83,6 +83,9 @@ with no API; `--no-judge` drops the 375B yes/no check.
 - `k2cascade/parse.py` parses `<ifm|think>` and `<ifm|tool_calls>` output. Neither llama.cpp nor the IFM fork has a parser for it.
 - `k2cascade/verify.py` rule checks; `k2cascade/cloud.py` IFM API client and the yes/no judge; `k2cascade/loop.py` the ladder.
 - `k2cascade/trace.py` JSONL writer; `k2cascade/compare.py` the table above; `demo/todo-cli` the task; `traces/` the data.
+- `k2cascade/surprise.py` teacher-forcing surprise map (375B outputs scored by the 3.7B); `k2cascade/gate.py` the post-hoc
+  surprise gate on each attempt's own output; `k2cascade/probe.py` the pre-action hidden-state probe (leave-one-run-out);
+  `k2cascade/probe_vs_gate.py` writes `analysis/probe_vs_gate.md`; `k2cascade/metrics.py` rank AUROC, bootstrap, Spearman.
 
 ## Caveats, stated plainly
 
