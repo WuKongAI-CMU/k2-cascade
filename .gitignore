@@ -1,5 +1,6 @@
 .venv/
-vendor/
+vendor/*
+!vendor/k2_horizon/
 __pycache__/
 *.gguf
 .env
