@@ -18,12 +18,16 @@ class Usage:
     latency_ms: int
 
 
-def _post_with_retry(client: httpx.Client, url: str, *, json: dict, attempts: int = 4, **kw):
+def _post_with_retry(client: httpx.Client, url: str, *, json: dict, attempts: int = 6, **kw):
     """POST with exponential backoff on transport errors and 5xx (llama-server under load drops connections)."""
     delay = 2.0
     for i in range(attempts):
         try:
             r = client.post(url, json=json, **kw)
+            if r.status_code == 429 and i < attempts - 1:
+                time.sleep(max(delay, 15.0))  # rate limit: wait longer than the transport backoff
+                delay = max(delay * 2, 30.0)
+                continue
             if r.status_code >= 500 and i < attempts - 1:
                 raise httpx.HTTPStatusError(f"{r.status_code}", request=r.request, response=r)
             return r
