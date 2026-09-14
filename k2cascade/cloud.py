@@ -8,7 +8,7 @@ from typing import Any
 
 import httpx
 
-from .local import Usage
+from .local import Usage, _post_with_retry
 from .parse import Parsed
 
 DEFAULT_MODEL = "IFM/K2-Horizon-375B-A23B"
@@ -73,7 +73,7 @@ class CloudK2:
              "Is this a useful next step toward completing the task (not redundant, not off-track, not repeating work already done)? "
              "Answer with exactly one word: yes or no.")
         t0 = time.perf_counter()
-        r = self.client.post("/chat/completions", json={"model": self.model, "messages": [{"role": "user", "content": q}], "max_tokens": 300, "temperature": 0, "reasoning_effort": "low"})
+        r = _post_with_retry(self.client, "/chat/completions", json={"model": self.model, "messages": [{"role": "user", "content": q}], "max_tokens": 300, "temperature": 0, "reasoning_effort": "low"})
         if r.status_code >= 400:
             raise RuntimeError(f"IFM API {r.status_code}: {r.text[:300]}")
         d = r.json()
@@ -87,7 +87,7 @@ class CloudK2:
     def step(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]], *, max_tokens: int = 4096, temperature: float = 0.6, reasoning_effort: str = "low") -> tuple[Parsed, Usage, str]:
         msgs = self._convert(messages)
         t0 = time.perf_counter()
-        r = self.client.post("/chat/completions", json={"model": self.model, "messages": msgs, "tools": tools, "max_tokens": max_tokens, "temperature": temperature, "reasoning_effort": reasoning_effort})
+        r = _post_with_retry(self.client, "/chat/completions", json={"model": self.model, "messages": msgs, "tools": tools, "max_tokens": max_tokens, "temperature": temperature, "reasoning_effort": reasoning_effort})
         if r.status_code >= 400:
             raise RuntimeError(f"IFM API {r.status_code}: {r.text[:500]}")
         d = r.json()

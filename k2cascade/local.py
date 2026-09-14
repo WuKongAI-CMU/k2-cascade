@@ -18,6 +18,23 @@ class Usage:
     latency_ms: int
 
 
+def _post_with_retry(client: httpx.Client, url: str, *, json: dict, attempts: int = 4, **kw):
+    """POST with exponential backoff on transport errors and 5xx (llama-server under load drops connections)."""
+    delay = 2.0
+    for i in range(attempts):
+        try:
+            r = client.post(url, json=json, **kw)
+            if r.status_code >= 500 and i < attempts - 1:
+                raise httpx.HTTPStatusError(f"{r.status_code}", request=r.request, response=r)
+            return r
+        except (httpx.TransportError, httpx.HTTPStatusError) as e:
+            if i == attempts - 1:
+                raise
+            time.sleep(delay)
+            delay *= 2
+    raise RuntimeError("unreachable")
+
+
 class LocalK2:
     def __init__(self, base_url: str = "http://127.0.0.1:8081", name: str = "k2-3.7b", timeout: float = 300):
         self.base_url = base_url.rstrip("/")
@@ -35,7 +52,8 @@ class LocalK2:
     ) -> tuple[Parsed, Usage, str]:
         prompt = render(messages, tools, reasoning_effort=reasoning_effort)
         t0 = time.perf_counter()
-        r = self.client.post(
+        r = _post_with_retry(
+            self.client,
             f"{self.base_url}/completion",
             json={
                 "prompt": prompt,
