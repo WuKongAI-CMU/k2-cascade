@@ -4,6 +4,8 @@ Format: screen recording (QuickTime, 1920×1080), you on camera optional. Show `
 switch to a terminal for the live run, back to slides. IFM adds their own opening and closing; start on the first slide.
 No AUROC numbers in this cut (results go to IFM later, in person). Target 2:30.
 
+(Deck is now 10 slides. For the 2.5-minute cut, skip slides 3 and 8; for a research audience, keep all ten.)
+
 ## 0:00–0:20 · Slide 1
 Hi, I'm Peter Qin from CMU. This is K2 Cascade, built at HackCMU on the K2 Horizon family.
 Today every agent step goes to the biggest model, because no model can tell when a step is beyond it.
@@ -23,16 +25,23 @@ Narrate: two failing tests, implement two flags. The 0.9B runs the tests, reads 
 At the code-writing step it's rejected and the 3.7B takes over. The 375B only answers yes or no.
 (If a 429 appears, wait; the client retries.)
 
-## 1:20–1:50 · Slides 4–5
-On this task the small models carried the whole loop; the 375B was never needed for an action.
-We then scored the 375B's steps token by token with the 3.7B: the surprise sits in the prose, not in the tool calls.
-With more tasks, three tasks landed on three different rungs: one the 0.9B solved alone, one needed the 3.7B, one needed the 375B.
+## 1:20–1:40 · Slides 4–5
+Across four tasks and 37 runs, ninety percent of the accepted agent steps ran on the laptop.
+Different tasks needed different rungs: one the 0.9B solved alone, one needed the 3.7B, one really needed the 375B.
+And when we scored the 375B's steps token by token with the 3.7B, the surprise sat in the prose, not in the tool calls.
 
-## 1:50–2:15 · Slide 6
-What we're building next: read the small model's own state before it acts, so it knows when a step is beyond it,
-and later hand that state to the larger model directly instead of re-reading text. Latent communication inside one family.
+## 1:40–2:00 · Slide 6 (the result)
+So we asked whether the small model already knows. We read its hidden state at the last prompt position, before it
+writes anything, and fit a linear probe to predict whether the verifier will reject the step. It works at both sizes,
+at almost every layer, and it beats scoring the output after the fact.
 
-## 2:15–2:30 · Slide 8
+## 2:00–2:25 · Slides 7 and 9 (where this goes)
+That signal is the piece nobody sends. Models today hand off to each other in English, or by copying a KV cache
+that carries what the sender computed but not how sure the sender was. The 3.7B and the 7B share a key-value
+shape and a tokenizer, so the cache can be mapped between them. Our next step is to make the probe's answer
+part of what travels.
+
+## 2:25–2:40 · Slide 10
 Thanks to IFM for opening the whole ladder. Code, traces and results: github.com/WuKongAI-CMU/k2-cascade.
 
 ## Recording checklist
