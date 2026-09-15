@@ -87,6 +87,7 @@ def main(argv=None):
     ap.add_argument("--trace-model", required=True)
     ap.add_argument("--traces", nargs="*", type=Path, default=None)
     ap.add_argument("--probe", type=Path, default=None, help="probe json to compare against")
+    ap.add_argument("--probe-scores", type=Path, default=None, help="probe_<size>.jsonl with out-of-fold p_fail per attempt")
     ap.add_argument("--hidden", type=Path, default=None, help="hidden_<size>.npz from probe.py")
     ap.add_argument("--out", type=Path, default=None)
     a = ap.parse_args(argv)
@@ -103,7 +104,26 @@ def main(argv=None):
         v = auroc(sc, y)
         singles[nm] = round(max(v, 1 - v), 3)
     res["single_feature_best_direction"] = singles
-    # incremental test: does the hidden state add anything ON TOP of the metadata?
+    # The right incremental test at this n: collapse the probe to ONE feature (its
+    # out-of-fold p_fail) and refit alongside the 9 metadata scalars. Concatenating
+    # 1536 raw dims to 9 scalars over ~130 rows measures overfitting, not information.
+    if a.probe_scores and a.probe_scores.exists():
+        rows = [json.loads(l) for l in a.probe_scores.read_text().splitlines() if l.strip()]
+        if len(rows) != len(y):
+            res["incremental_1d"] = {"error": f"probe jsonl has {len(rows)} rows, metadata has {len(y)}"}
+        else:
+            pf = np.array([r["p_fail_best_layer"] for r in rows], float)
+            logit = np.log(np.clip(pf, 1e-6, 1 - 1e-6) / np.clip(1 - pf, 1e-6, 1 - 1e-6))
+            s_meta = loro_logistic(X, y, g)
+            s_both = loro_logistic(np.c_[X, logit], y, g)
+            res["incremental_1d"] = {
+                "probe_alone": dict(zip(("auroc", "lo", "hi"), bootstrap_auroc(logit, y))),
+                "metadata_only": dict(zip(("auroc", "lo", "hi"), bootstrap_auroc(s_meta, y))),
+                "metadata_plus_probe": dict(zip(("auroc", "lo", "hi"), bootstrap_auroc(s_both, y))),
+                "delta_over_metadata": float(auroc(s_both, y) - auroc(s_meta, y)),
+                "spearman_metadata_vs_probe": spearman(s_meta, logit),
+            }
+    # raw-dim version, kept for the record: expect it to overfit at this n
     if a.hidden and a.hidden.exists():
         H = np.load(a.hidden, allow_pickle=True)["last"]          # (n_attempts, n_layers, d)
         if len(H) != len(y):

@@ -30,24 +30,24 @@
   "last=write": 0.506,
   "any_prior_reject": 0.653
  },
- "incremental": {
-  "layer": 12,
+ "incremental_1d": {
+  "probe_alone": {
+   "auroc": 0.8235969387755102,
+   "lo": 0.7531377995642702,
+   "hi": 0.8883929122574955
+  },
   "metadata_only": {
    "auroc": 0.7716836734693877,
    "lo": 0.6862039966206633,
    "hi": 0.8479035493827161
   },
-  "hidden_only": {
-   "auroc": 0.8108418367346939,
-   "lo": 0.7397620227795516,
-   "hi": 0.8781306806754539
+  "metadata_plus_probe": {
+   "auroc": 0.8221938775510204,
+   "lo": 0.7472427113841742,
+   "hi": 0.8895413507883836
   },
-  "metadata_plus_hidden": {
-   "auroc": 0.7859693877551021,
-   "lo": 0.7058182470124386,
-   "hi": 0.8635313390507924
-  },
-  "spearman_metadata_vs_hidden": 0.5625723282835018
+  "delta_over_metadata": 0.05051020408163265,
+  "spearman_metadata_vs_probe": 0.6086405974457594
  },
  "probe_best_layer": {
   "layer": 12,

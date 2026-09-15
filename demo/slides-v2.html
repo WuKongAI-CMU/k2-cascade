@@ -230,10 +230,10 @@ context <i>c<sub>t</sub></i> &#183; residual state <i>h<sub>t</sub></i> = <b>m</
 <tr><td>attempts / rejected</td><td>129 / 49</td><td>127 / 19</td></tr>
 <tr><td>probe, best layer</td><td><b>0.82</b> <span class="ci">[0.75, 0.89]</span></td><td><b>0.88</b> <span class="ci">[0.79, 0.96]</span></td></tr>
 <tr><td>probe, median layer</td><td>0.78</td><td>0.86</td></tr>
-<tr><td>metadata shortcut</td><td class="bad">0.77</td><td class="bad">0.70</td></tr>
+<tr><td>metadata shortcut</td><td class="bad">0.77</td><td class="bad">0.70</td></tr><tr><td>probe adds over it</td><td>+0.05</td><td><b>+0.13</b></td></tr>
 <tr><td>post-hoc surprise</td><td class="bad">0.31</td><td class="bad">0.14</td></tr>
 </table>
-<p class="note">The honest read: on the 3.7B the probe clears a 9-feature bookkeeping baseline (step index, prior rejects, last tool, prompt length) by a wide margin. On the 0.9B it does not &#8212; its median layer and that baseline are the same number. The post-hoc surprise gate runs <i>backwards</i>: a model repeating itself is not surprised by its own repetition.</p></aside></div>
+<p class="note">The check that matters: collapse the probe to one number and refit it beside nine bookkeeping scalars &#8212; step index, prior rejects, last tool, prompt length. It still adds <b>+0.13</b> AUROC on the 3.7B and <b>+0.05</b> on the 0.9B. The two signals correlate &#961;=0.39 on the 3.7B but &#961;=0.61 on the 0.9B: the smaller model's "I am about to fail" is largely "this is a bad situation", the larger model's is not. The post-hoc surprise gate runs <i>backwards</i> &#8212; a model repeating itself is not surprised by its own repetition.</p></aside></div>
 </section>
 
 <section class="s latent" role="group" aria-roledescription="slide" aria-label="9 of 15" aria-hidden="true" inert>
