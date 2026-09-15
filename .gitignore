@@ -4,3 +4,4 @@ vendor/*
 __pycache__/
 *.gguf
 .env
+analysis/hidden/*.npz
