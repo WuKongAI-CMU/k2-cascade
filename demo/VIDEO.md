@@ -4,7 +4,11 @@ Format: screen recording (QuickTime, 1920×1080), you on camera optional. Show `
 switch to a terminal for the live run, back to slides. IFM adds their own opening and closing; start on the first slide.
 No AUROC numbers in this cut (results go to IFM later, in person). Target 2:30.
 
-(Deck is now 10 slides. For the 2.5-minute cut, skip slides 3 and 8; for a research audience, keep all ten.)
+(The deck is now 12 slides and doubles as a research pitch deck. For the 2.5-minute IFM cut use slides
+1, 3, 4, then the terminal, then 5, 6, 7, 8, 12 — skip slide 2 (why now), slide 9 (what we refuse to claim)
+and slide 11 (roadmap), which are for a research or investor audience. Slide order: 1 cover, 2 why now,
+3 the question, 4 why K2 Horizon, 5 results, 6 traces, 7 the probe, 8 latent communication,
+9 what we refuse to claim, 10 architecture, 11 roadmap, 12 close.)
 
 ## 0:00–0:20 · Slide 1
 Hi, I'm Peter Qin from CMU. This is K2 Cascade, built at HackCMU on the K2 Horizon family.
