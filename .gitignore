@@ -6,3 +6,4 @@ __pycache__/
 .env
 analysis/hidden/*.npz
 demo/video/*.mp4
+runs/**/*.safetensors
