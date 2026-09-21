@@ -58,7 +58,8 @@ def projected_cache(src_model: nn.Module, tgt_model: nn.Module, projector: nn.Mo
         s = extract(src_model, prefix, with_hidden=False)
     with torch.set_grad_enabled(grad):
         keys, values = projector(s)
-    return make_cache(tgt_model, keys, values)
+    dt = next(tgt_model.parameters()).dtype  # ridge buffers are float32; the receiver may run in bf16
+    return make_cache(tgt_model, [k.to(dt) for k in keys], [v.to(dt) for v in values])
 
 
 def retention(none: float, oracle: float, project: float) -> float:
