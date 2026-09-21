@@ -162,7 +162,13 @@ def main(argv=None) -> None:
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     src, tgt, tok = load_models(TrainConfig(source=a.source, target=a.target), dev)
     freeze(src), freeze(tgt)
-    proj = None if a.projector == "none" else RidgeProjector.load(a.projector, dev)
+    if a.projector == "none":
+        proj = None
+    elif (Path(a.projector) / "mlp.safetensors").exists():
+        from .mlp import MLPProjector
+        proj = MLPProjector.load(a.projector, dev)
+    else:
+        proj = RidgeProjector.load(a.projector, dev)
     enc = Encoder(tok, a.names, a.colours)
     res = run(src, tgt, proj, enc, make_episodes(a.episodes, a.names, a.colours, a.seed))
     res.update(source=a.source, target=a.target, projector=a.projector, seed=a.seed)
