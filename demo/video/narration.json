@@ -1,0 +1,56 @@
+[
+ {
+  "id": "s01",
+  "img": "slide_01.png",
+  "text": "Hi, I'm Peter Qin from Carnegie Mellon. This is K2 Cascade, built at HackCMU on the K2 Horizon family. Today, every agent step goes to the biggest model, because no model can tell when a step is beyond it. We think the next capability is a model that knows its own limits.",
+  "dur": 17.28
+ },
+ {
+  "id": "s03",
+  "img": "slide_03.png",
+  "text": "So we asked a concrete question. In a coding agent, which steps actually need a three hundred and seventy five billion parameter model? We built a ladder. The point nine B and the three point seven B run on this laptop, and the three seventy five B runs through the IFM API.",
+  "dur": 15.91
+ },
+ {
+  "id": "s05",
+  "img": "slide_05.png",
+  "text": "K2 Horizon makes this measurable. Six sizes share one training recipe, one chat template and one tool call format, so model size is close to the only variable. Each step goes to the smallest model first. A verifier checks it, and on failure, the next size takes over.",
+  "dur": 16.93
+ },
+ {
+  "id": "term",
+  "img": null,
+  "text": "Here is a live run on this laptop, sped up. The point nine B runs the tests, then goes looking for the source, at a path it made up. The judge rejects its next move twice, and the three point seven B takes over. It reads the file, writes the fix, and runs the tests. They pass, and control goes back to the point nine B to write the summary.",
+  "dur": 20.55
+ },
+ {
+  "id": "s06",
+  "img": "slide_06.png",
+  "text": "Across four tasks and thirty seven runs, ninety percent of the accepted agent steps ran on the laptop. And different tasks needed different sizes. One the point nine B solved alone, one needed the three point seven B, and one really needed the three seventy five B.",
+  "dur": 15.39
+ },
+ {
+  "id": "s07",
+  "img": "slide_07.png",
+  "text": "When we scored the big model's steps token by token with the three point seven B, its edge sat in its prose, not in its tool calls.",
+  "dur": 7.42
+ },
+ {
+  "id": "s08",
+  "img": "slide_08.png",
+  "text": "So we asked whether the small model already knows. Before it writes anything, we read its hidden state, and fit a linear probe to predict whether the step will be rejected. On the three point seven B it reaches point eight eight, and it adds real information beyond simple bookkeeping, like the step count and earlier failures.",
+  "dur": 17.81
+ },
+ {
+  "id": "s09",
+  "img": "slide_09.png",
+  "text": "That signal is exactly what models never pass to each other. They hand off in English, or copy a cache that carries what the sender computed, but not how sure it was. The three point seven B and the seven B share a key value layout and a tokenizer. So our next step is to pass that state directly, with the uncertainty travelling alongside it.",
+  "dur": 19.46
+ },
+ {
+  "id": "s15",
+  "img": "slide_15.png",
+  "text": "Thank you to IFM for opening the whole ladder. The code, traces and results are on GitHub, at WuKong AI CMU, slash K2 Cascade.",
+  "dur": 8.83
+ }
+]

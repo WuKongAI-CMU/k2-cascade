@@ -5,3 +5,4 @@ __pycache__/
 *.gguf
 .env
 analysis/hidden/*.npz
+demo/video/*.mp4
