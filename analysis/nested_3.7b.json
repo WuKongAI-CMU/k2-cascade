@@ -1,0 +1,71 @@
+{
+ "size": "3.7b",
+ "n": 127,
+ "n_rejected": 19,
+ "n_runs": 26,
+ "note": "nested leave-one-run-out; layer fixed a priori; CIs are run-level cluster bootstrap",
+ "layers": {
+  "final_norm": {
+   "layer": 36,
+   "meta": {
+    "auroc": 0.704,
+    "ci": [
+     0.536,
+     0.801
+    ]
+   },
+   "probe": {
+    "auroc": 0.819,
+    "ci": [
+     0.701,
+     0.91
+    ]
+   },
+   "both": {
+    "auroc": 0.805,
+    "ci": [
+     0.643,
+     0.913
+    ]
+   },
+   "delta_both_minus_meta": {
+    "value": 0.101,
+    "ci": [
+     0.03,
+     0.198
+    ]
+   }
+  },
+  "middle": {
+   "layer": 18,
+   "meta": {
+    "auroc": 0.704,
+    "ci": [
+     0.536,
+     0.801
+    ]
+   },
+   "probe": {
+    "auroc": 0.876,
+    "ci": [
+     0.813,
+     0.944
+    ]
+   },
+   "both": {
+    "auroc": 0.847,
+    "ci": [
+     0.709,
+     0.939
+    ]
+   },
+   "delta_both_minus_meta": {
+    "value": 0.144,
+    "ci": [
+     0.073,
+     0.245
+    ]
+   }
+  }
+ }
+}
