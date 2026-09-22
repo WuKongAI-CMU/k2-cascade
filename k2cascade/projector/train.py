@@ -44,7 +44,7 @@ class TrainConfig:
     warmup: float = 0.1
     bottleneck: int = 128  # LCF uses 128-256; per-head inputs are only 256-d so 128 is enough
     freeze_ridge: bool = False
-    grad_ckpt: bool = True
+    grad_ckpt: bool = False  # HF checkpointing drops past_key_values in train mode, so the projected cache would be ignored
     bf16: bool = True
     attn: str = "sdpa"  # or flash_attention_2
     save_every: int = 50

@@ -18,7 +18,7 @@ ridge() {  # ridge <map> <k> <name>
 train() {  # train <ridge_dir> <name> <steps> [extra flags...]
   local r=$1 n=$2 s=$3; shift 3
   $PY -m k2cascade.projector.train --source "$SRC" --target "$TGT" --data data/fineweb_1024.jsonl --ridge "$r" \
-      --out "runs/$n" --steps "$s" --batch 2 --accum 8 --save_every 100 "$@" > "logs/train_$n.log" 2>&1
+      --out "runs/$n" --steps "$s" --batch 1 --accum 16 --save_every 100 "$@" > "logs/train_$n.log" 2>&1
   noma "runs/$n/step_$s" "analysis/noma_$n.json"; retention "runs/$n/step_$s" "$n"; }
 
 # ---- P0 data: 8192 sequences (32 held out, 512 for ridge, the rest for training)
