@@ -24,8 +24,23 @@ import torch.nn as nn
 
 from .extract import extract, make_cache
 
-NAMES = ["Noma", "Vela", "Tarn", "Quill", "Brisa", "Oskel", "Mirel", "Dunra"]
+NAMES = ["Noma", "Vela", "Tarn", "Quill", "Brisa", "Oskel", "Mirel", "Dunra",
+         "Fenwick", "Lisbet", "Corvin", "Adaline", "Thurlow", "Isolde", "Percival", "Marisol"]
 COLOURS = ["amber", "indigo", "crimson", "teal", "violet", "olive", "coral", "silver"]
+# attribute type -> (value pool, fact template, question, answer stem). Values must be single tokens.
+ATTRS = {
+    "colour": (COLOURS, "{n} is {v}.", "What colour is {n}?", "{n} is"),
+    "city": (["Paris", "Rome", "Tokyo", "Berlin", "London", "Madrid", "Cairo", "Lima"],
+             "{n} lives in {v}.", "Where does {n} live?", "{n} lives in"),
+    "animal": (["dog", "cat", "fox", "owl", "bear", "wolf", "deer", "frog"],
+               "{n} is a {v}.", "What animal is {n}?", "{n} is a"),
+}
+# neutral filler that mentions no name or value; repeated to pad the facts to a target length
+FILLER = ("The afternoon light moved slowly across the wooden floor of the reading room. Outside, a delivery van "
+          "idled at the corner while its driver checked an address on a folded sheet of paper. The library "
+          "had been built in 1911 and extended twice since, most recently with a glass wing that faced the park. "
+          "A notice near the door announced revised opening hours for the autumn, and a second notice, older and "
+          "slightly torn, advertised a lecture series on regional geology that had ended the previous spring. ")
 ARMS = ("none", "text", "self", "raw", "project", "derange")
 
 
@@ -52,24 +67,32 @@ def make_episodes(n: int, n_names: int, n_colours: int, seed: int = 0) -> list[E
 
 
 class Encoder:
-    """Turns an episode into token ids. `facts` (with BOS) goes to the sender; `question` ends right before the colour."""
+    """Turns an episode into token ids. `facts` (with BOS) goes to the sender; `question` ends right before the value.
+    `attr` picks the attribute type; `pad` appends neutral filler after the facts up to `pad` tokens, so the
+    queried fact sits further from the question (every episode gets the same filler: layouts stay identical)."""
 
-    def __init__(self, tokenizer, n_names: int, n_colours: int):
-        self.tok, self.names, self.colours = tokenizer, NAMES[:n_names], COLOURS[:n_colours]
+    def __init__(self, tokenizer, n_names: int, n_colours: int, attr: str = "colour", pad: int = 0):
+        pool, self.fact_t, self.q_t, self.stem_t = ATTRS[attr]
+        self.tok, self.names, self.colours, self.pad = tokenizer, NAMES[:n_names], pool[:n_colours], pad
         self.colour_ids = []
         for c in self.colours:
             ids = tokenizer(" " + c, add_special_tokens=False)["input_ids"]
             if len(ids) != 1:
-                raise ValueError(f"colour {c!r} is not a single token: {ids}")
+                raise ValueError(f"value {c!r} is not a single token: {ids}")
             self.colour_ids.append(ids[0])
         self.bos = [tokenizer.bos_token_id] if tokenizer.bos_token_id is not None else []
+        self.filler = self.tok(" " + FILLER * 8, add_special_tokens=False)["input_ids"] if pad else []
 
     def facts(self, e: Episode) -> list[int]:
-        text = " ".join(f"{n} is {self.colours[c]}." for n, c in zip(self.names, e.colours))
-        return self.bos + self.tok(text, add_special_tokens=False)["input_ids"]
+        text = " ".join(self.fact_t.format(n=n, v=self.colours[c]) for n, c in zip(self.names, e.colours))
+        ids = self.bos + self.tok(text, add_special_tokens=False)["input_ids"]
+        if self.pad and len(ids) < self.pad:
+            ids = ids + self.filler[:self.pad - len(ids)]
+        return ids
 
     def question(self, e: Episode) -> list[int]:
-        q = f"\nQuestion: What colour is {self.names[e.query]}?\nAnswer: {self.names[e.query]} is"
+        n = self.names[e.query]
+        q = f"\nQuestion: {self.q_t.format(n=n)}\nAnswer: {self.stem_t.format(n=n)}"
         return self.tok(q, add_special_tokens=False)["input_ids"]
 
 
@@ -91,8 +114,11 @@ def _cache_from_bundle(model, keys, values):
 
 @torch.no_grad()
 def arm_logprobs(arm: str, src: nn.Module, tgt: nn.Module, projector: nn.Module | None,
-                 facts: torch.Tensor, partner_facts: torch.Tensor, question: torch.Tensor) -> torch.Tensor:
-    """Full-vocabulary next-token log-probs for one arm. `facts`/`partner_facts` are (1, P) with identical P."""
+                 facts: torch.Tensor, partner_facts: torch.Tensor, question: torch.Tensor,
+                 layers: set[int] | None = None) -> torch.Tensor:
+    """Full-vocabulary next-token log-probs for one arm. `facts`/`partner_facts` are (1, P) with identical P.
+    `layers` restricts the `project` arm: only those receiver layers get this episode's projected cache, the
+    rest get the partner's (so any content can only have entered through the listed layers)."""
     p = facts.shape[1]
     if arm == "none":
         q = torch.cat([facts[:, :1], question], 1) if facts.shape[1] else question  # keep BOS
@@ -108,11 +134,15 @@ def arm_logprobs(arm: str, src: nn.Module, tgt: nn.Module, projector: nn.Module 
     if arm in ("project", "derange"):
         b = extract(src, facts if arm == "project" else partner_facts, with_hidden=False)
         keys, values = projector(b)
+        if arm == "project" and layers is not None:
+            pk, pv = projector(extract(src, partner_facts, with_hidden=False))
+            keys = [k if j in layers else o for j, (k, o) in enumerate(zip(keys, pk))]
+            values = [v if j in layers else o for j, (v, o) in enumerate(zip(values, pv))]
         return next_token_logprobs(tgt, question, _cache_from_bundle(tgt, keys, values), p)
     raise ValueError(arm)
 
 
-def run(src, tgt, projector, enc: Encoder, episodes: list[Episode], arms=ARMS) -> dict:
+def run(src, tgt, projector, enc: Encoder, episodes: list[Episode], arms=ARMS, layers: set[int] | None = None) -> dict:
     """Accuracy, mean log-prob of the true colour, and (derange) follow-rate over the colour set."""
     dev = next(tgt.parameters()).device
     cid = torch.tensor(enc.colour_ids, device=dev)
@@ -125,7 +155,7 @@ def run(src, tgt, projector, enc: Encoder, episodes: list[Episode], arms=ARMS) -
         for a in arms:
             if a in ("project", "derange") and projector is None:
                 continue
-            lp = arm_logprobs(a, src, tgt, projector, f, pf, q)[cid]
+            lp = arm_logprobs(a, src, tgt, projector, f, pf, q, layers)[cid]
             pred = int(lp.argmax())
             s = stats[a]
             s["correct"] += pred == e.answer
@@ -142,7 +172,8 @@ def run(src, tgt, projector, enc: Encoder, episodes: list[Episode], arms=ARMS) -
     if all(k in out for k in ("none", "text", "project")):
         gap = out["text"]["acc"] - out["none"]["acc"]
         out["retention"] = (out["project"]["acc"] - out["none"]["acc"]) / gap if gap else float("nan")
-    out.update(n=n, chance=1 / len(enc.colour_ids))
+    out.update(n=n, chance=1 / len(enc.colour_ids), facts_tokens=len(enc.facts(episodes[0])),
+               layers=sorted(layers) if layers is not None else None)
     return out
 
 
@@ -158,7 +189,16 @@ def main(argv=None) -> None:
     ap.add_argument("--projector", default="none"); ap.add_argument("--episodes", type=int, default=300)
     ap.add_argument("--names", type=int, default=6); ap.add_argument("--colours", type=int, default=8)
     ap.add_argument("--seed", type=int, default=0); ap.add_argument("--out", default="analysis/noma.json")
+    ap.add_argument("--attr", default="colour", choices=list(ATTRS)); ap.add_argument("--pad", type=int, default=0)
+    ap.add_argument("--layers", default=None, help="receiver layers that get this episode's cache, e.g. 0-11 or 3,7")
+    ap.add_argument("--arms", default=",".join(ARMS))
     a = ap.parse_args(argv)
+    layers = None
+    if a.layers:
+        layers = set()
+        for part in a.layers.split(","):
+            lo, _, hi = part.partition("-")
+            layers.update(range(int(lo), int(hi or lo) + 1))
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     src, tgt, tok = load_models(TrainConfig(source=a.source, target=a.target), dev)
     freeze(src), freeze(tgt)
@@ -169,9 +209,9 @@ def main(argv=None) -> None:
         proj = MLPProjector.load(a.projector, dev)
     else:
         proj = RidgeProjector.load(a.projector, dev)
-    enc = Encoder(tok, a.names, a.colours)
-    res = run(src, tgt, proj, enc, make_episodes(a.episodes, a.names, a.colours, a.seed))
-    res.update(source=a.source, target=a.target, projector=a.projector, seed=a.seed)
+    enc = Encoder(tok, a.names, a.colours, a.attr, a.pad)
+    res = run(src, tgt, proj, enc, make_episodes(a.episodes, a.names, a.colours, a.seed), tuple(a.arms.split(",")), layers)
+    res.update(source=a.source, target=a.target, projector=a.projector, seed=a.seed, attr=a.attr, pad=a.pad)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=1))
     print(json.dumps(res, indent=1))

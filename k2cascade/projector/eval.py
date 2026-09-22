@@ -52,10 +52,11 @@ def oracle_cache(model: nn.Module, prefix: torch.Tensor):
 
 
 def projected_cache(src_model: nn.Module, tgt_model: nn.Module, projector: nn.Module, prefix: torch.Tensor,
-                    grad: bool = False):
-    """Source KV of `prefix` (no grad) -> projector -> DynamicCache for the target (grad if requested)."""
+                    grad: bool = False, source_prefix: torch.Tensor | None = None):
+    """Source KV of `prefix` (no grad) -> projector -> DynamicCache for the target (grad if requested).
+    `source_prefix` substitutes a different text for the sender (the deranged-source control)."""
     with torch.no_grad():
-        s = extract(src_model, prefix, with_hidden=False)
+        s = extract(src_model, prefix if source_prefix is None else source_prefix, with_hidden=False)
     with torch.set_grad_enabled(grad):
         keys, values = projector(s)
     dt = next(tgt_model.parameters()).dtype  # ridge buffers are float32; the receiver may run in bf16
@@ -69,12 +70,15 @@ def retention(none: float, oracle: float, project: float) -> float:
 
 @torch.no_grad()
 def evaluate(src_model: nn.Module, tgt_model: nn.Module, projector: nn.Module, batches, prefix_len: int,
-             with_source_oracle: bool = False) -> dict[str, float]:
+             with_source_oracle: bool = False, with_derange: bool = False) -> dict[str, float]:
     """batches: iterable of input_ids (B, T), T > prefix_len. Mean losses per arm + retention.
-    with_source_oracle adds the source model reading its own prefix (what the small model alone gets)."""
+    with_source_oracle adds the source model reading its own prefix (what the small model alone gets).
+    with_derange adds the projector fed the *next batch's* prefix: retention_derange > 0 means the map helps
+    without carrying content (a learned soft prompt), so content = retention - retention_derange."""
     sums: dict[str, float] = {"none": 0.0, "oracle": 0.0, "project": 0.0}
     n = 0
-    for ids in batches:
+    batches = list(batches)
+    for i, ids in enumerate(batches):
         prefix, cont = ids[:, :prefix_len], ids[:, prefix_len:]
         sums["none"] += continuation_loss(tgt_model, cont).item()
         sums["oracle"] += continuation_loss(tgt_model, cont, oracle_cache(tgt_model, prefix), prefix_len).item()
@@ -83,9 +87,15 @@ def evaluate(src_model: nn.Module, tgt_model: nn.Module, projector: nn.Module, b
         if with_source_oracle:
             sums["source_oracle"] = sums.get("source_oracle", 0.0) + continuation_loss(
                 src_model, cont, oracle_cache(src_model, prefix), prefix_len).item()
+        if with_derange and len(batches) > 1:  # sender read a different text: what the map gives without content
+            other = batches[(i + 1) % len(batches)][:, :prefix_len]
+            sums["derange"] = sums.get("derange", 0.0) + continuation_loss(
+                tgt_model, cont, projected_cache(src_model, tgt_model, projector, prefix, source_prefix=other), prefix_len).item()
         n += 1
     res = {k: v / n for k, v in sums.items()}
     res["retention"] = retention(res["none"], res["oracle"], res["project"])
+    if "derange" in res:
+        res["retention_derange"] = retention(res["none"], res["oracle"], res["derange"])
     res["batches"] = n
     return res
 
@@ -113,7 +123,7 @@ def main(argv=None) -> None:
     ap.add_argument("--projector", required=True, help="dir with ridge.safetensors or mlp.safetensors")
     ap.add_argument("--data", required=True); ap.add_argument("--eval_seqs", type=int, default=32)
     ap.add_argument("--batch", type=int, default=2); ap.add_argument("--seq_len", type=int, default=1024)
-    ap.add_argument("--prefix_len", type=int, default=512)
+    ap.add_argument("--prefix_len", type=int, default=512); ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     src, tgt, tok = load_models(TrainConfig(source=a.source, target=a.target), dev)
@@ -122,7 +132,11 @@ def main(argv=None) -> None:
     proj = (MLPProjector.load if (Path(a.projector) / "mlp.safetensors").exists() else RidgeProjector.load)(a.projector, dev)
     held = jsonl_sequences(a.data, tok, a.seq_len)[:a.eval_seqs]
     batches = [torch.tensor(held[i:i + a.batch], device=dev) for i in range(0, len(held) - a.batch + 1, a.batch)]
-    print(json.dumps(evaluate(src, tgt, proj, batches, a.prefix_len, with_source_oracle=True)))
+    res = evaluate(src, tgt, proj, batches, a.prefix_len, with_source_oracle=True, with_derange=True)
+    res.update(projector=a.projector, data=a.data, eval_seqs=len(held))
+    print(json.dumps(res))
+    if a.out:
+        Path(a.out).parent.mkdir(parents=True, exist_ok=True); Path(a.out).write_text(json.dumps(res, indent=1))
 
 
 if __name__ == "__main__":
