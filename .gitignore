@@ -7,3 +7,4 @@ __pycache__/
 analysis/hidden/*.npz
 demo/video/*.mp4
 runs/**/*.safetensors
+runs/cloud/
