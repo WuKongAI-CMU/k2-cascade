@@ -42,4 +42,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    import os, sys
     main()
+    sys.stdout.flush()
+    # The streaming dataset leaves background threads that can abort the interpreter during
+    # finalization (PyGILState_Release) after the file is fully written. Skip finalization.
+    os._exit(0)

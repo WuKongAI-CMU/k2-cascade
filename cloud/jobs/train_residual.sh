@@ -3,6 +3,7 @@
 set -euo pipefail
 STEPS=${K2_STEPS:-300}
 HF_HUB_OFFLINE=0 $PY -m k2cascade.projector.data.prepare_fineweb --tokenizer "$TGT" --n 2048 --out data/fineweb_1024.jsonl > logs/data.log 2>&1
+[ "$(wc -l < data/fineweb_1024.jsonl)" -ge 2048 ] || { echo "data prep wrote too few sequences"; exit 1; }
 $PY -m k2cascade.projector.ridge --source "$SRC" --target "$TGT" --data data/fineweb_1024.jsonl --out runs/ridge_top3 --seqs 512 --eval_seqs 32 --map topk --k 3 > logs/ridge_top3.log 2>&1
 $PY -m k2cascade.projector.noma --source "$SRC" --target "$TGT" --projector runs/ridge_top3 --episodes 300 --out analysis/noma_ridge_top3.json > logs/noma_ridge_top3.log 2>&1
 gcloud storage cp -r analysis logs "$OUT/" --quiet
