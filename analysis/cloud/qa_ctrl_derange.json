@@ -1,0 +1,19 @@
+{
+ "project": {
+  "logp": -3.768092052930345,
+  "em": 0.006666666666666667,
+  "f1": 0.15147934676262842
+ },
+ "derange": {
+  "logp": -3.95765017275388,
+  "em": 0.01,
+  "f1": 0.13716698320026482
+ },
+ "content_f1": 0.014312363562363595,
+ "n": 300,
+ "max_new": 8,
+ "source": "/opt/hf/hub/models--IFM--K2-Horizon-3.7B/snapshots/6360f705b2e57d542959e6a2e67ebeb95dae0373",
+ "target": "/opt/hf/hub/models--IFM--K2-Horizon-7B/snapshots/d6a80e21f447768a61f1c976aa8e7d8e82a20d57",
+ "projector": "runs/ctrl_derange",
+ "seed": 0
+}

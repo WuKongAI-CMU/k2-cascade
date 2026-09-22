@@ -16,17 +16,21 @@ def rows(dirs: list[str]):
                 j = json.loads(f.read_text())
             except Exception:
                 continue
-            if isinstance(j, dict) and "project" in j and isinstance(j["project"], dict):   # Noma
+            if not isinstance(j, dict):
+                continue
+            if "max_new" in j:                                                   # passage QA
+                yield ("qa", d, f.stem, j)
+            elif "project" in j and isinstance(j["project"], dict):              # Noma
                 yield ("noma", d, f.stem, j)
-            elif isinstance(j, dict) and "retention" in j and "oracle" in j:               # continuation retention
+            elif "retention" in j and "oracle" in j:                             # continuation retention
                 yield ("ret", d, f.stem, j)
 
 
 def main(argv=None) -> None:
     dirs = argv or sys.argv[1:] or ["analysis"]
-    noma, ret = [], []
+    noma, ret, qa = [], [], []
     for kind, d, name, j in rows(dirs):
-        (noma if kind == "noma" else ret).append((d, name, j))
+        {"noma": noma, "ret": ret, "qa": qa}[kind].append((d, name, j))
     print("## Noma binding transfer (accuracy; chance = 1/values)\n")
     print("| run | file | attr | pad | layers | n | none | text | project | derange | follow | transfer |")
     print("|---|---|---|---|---|---|---|---|---|---|---|---|")
@@ -44,6 +48,13 @@ def main(argv=None) -> None:
     for d, name, j in ret:
         print(f"| {d} | {name} | {j.get('eval_seqs', j.get('batches'))} | {j['none']:.3f} | {j['oracle']:.3f} | {j['project']:.3f} | "
               f"{j.get('derange', float('nan')):.3f} | {j['retention']:.3f} | {j.get('retention_derange', float('nan')):.3f} |")
+    print("\n## Passage QA (SQuAD; F1 / EM of greedy answers, mean gold log-prob per token)\n")
+    print("| run | file | n | arm | f1 | em | logp |")
+    print("|---|---|---|---|---|---|---|")
+    for d, name, j in qa:
+        for a, v in j.items():
+            if isinstance(v, dict) and "f1" in v:
+                print(f"| {d} | {name} | {j['n']} | {a} | {v['f1']:.3f} | {v['em']:.3f} | {v['logp']:.3f} |")
 
 
 if __name__ == "__main__":

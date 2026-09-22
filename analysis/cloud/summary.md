@@ -47,3 +47,21 @@
 | analysis/cloud | ret_fresh_ctrl_derange_s1500 | 128 | 2.596 | 2.400 | 2.445 | 2.456 | 0.769 | 0.716 |
 | analysis/cloud | ret_fresh_mlp_top3_s1500_seed0 | 128 | 2.596 | 2.400 | 2.356 | 2.535 | 1.226 | 0.309 |
 | analysis/cloud | ret_fresh_ridge_top3 | 128 | 2.596 | 2.400 | 2.654 | 2.725 | -0.298 | -0.659 |
+
+## Passage QA (SQuAD; F1 / EM of greedy answers, mean gold log-prob per token)
+
+| run | file | n | arm | f1 | em | logp |
+|---|---|---|---|---|---|---|
+| analysis/cloud | qa_ctrl_derange | 300 | project | 0.151 | 0.007 | -3.768 |
+| analysis/cloud | qa_ctrl_derange | 300 | derange | 0.137 | 0.010 | -3.958 |
+| analysis/cloud | qa_mlp_seed2 | 300 | project | 0.530 | 0.167 | -1.736 |
+| analysis/cloud | qa_mlp_seed2 | 300 | derange | 0.138 | 0.023 | -4.184 |
+| analysis/cloud | qa_mlp_seed2_n600 | 600 | text | 0.557 | 0.052 | -0.800 |
+| analysis/cloud | qa_mlp_seed2_n600 | 600 | project | 0.518 | 0.155 | -1.641 |
+| analysis/cloud | qa_mlp_seed2_n600 | 600 | derange | 0.131 | 0.018 | -4.068 |
+| analysis/cloud | qa_none | 300 | none | 0.166 | 0.003 | -3.574 |
+| analysis/cloud | qa_none | 300 | text | 0.547 | 0.053 | -0.897 |
+| analysis/cloud | qa_none | 300 | self | 0.547 | 0.053 | -0.897 |
+| analysis/cloud | qa_none | 300 | raw | 0.006 | 0.000 | -11.152 |
+| analysis/cloud | qa_ridge_top3 | 300 | project | 0.143 | 0.000 | -3.883 |
+| analysis/cloud | qa_ridge_top3 | 300 | derange | 0.106 | 0.000 | -4.433 |

@@ -95,6 +95,19 @@ the deranged episode's elsewhere. n = 500, 6-name variant.
 The first half of the network carries nothing usable on its own; the second half alone carries most of it, and
 no six-layer band suffices. The binding is read out from a distributed set of later layers.
 
+**Real passages (Table 2b).** The same projectors, never trained on questions, on SQuAD v1.1 validation:
+the sender reads the passage (≤ 512 tokens), the receiver reads only the question and answers greedily
+(≤ 8 tokens, stopped at newline). Token-F1 against the gold spans, n = 300 (600 for the trained projector).
+
+| receiver sees | none | text | raw | ridge | trained | deranged-sender ctrl | trained, derange arm |
+|---|---|---|---|---|---|---|---|
+| F1 | 16.6 | 54.7 | 0.6 | 14.3 | **53.0** (51.8 at n=600) | 15.1 | 13.8 |
+| gold log-prob / token | −3.57 | −0.90 | −11.2 | −3.88 | −1.74 | −3.77 | −4.18 |
+
+On F1 the trained projector recovers 96% of the gap between question-only and reading the passage; on gold
+log-probability it recovers 69%. The wrong passage's cache (derange), the ridge map, and the content-free
+projector all sit at or below question-only. The channel carries the passage, not a bias toward answering.
+
 **Continuation retention is the wrong headline (Table 3).** Following the closed-form-map literature we also
 report retention = (loss_none − loss_project)/(loss_none − loss_oracle) on 128 fresh held-out sequences.
 
