@@ -128,8 +128,10 @@ cannot distinguish a channel from a prompt; the binding test with its derange ar
 It shows that a specific fact can cross from a 3.7B cache into a 7B without text, that the crossing depends on
 the cache's content, and that the receiver reads it out from its later layers. It does not show that the channel
 is cheaper than text (a 512-token cache is ~75 MB against ~1 KB of text; compression is future work), that it
-carries anything richer than a single-token binding, or that it works across model families. The reverse
-direction (7B → 3.7B) is running [pending].
+carries anything richer than a single-token binding, or that it works across model families. The channel is
+not one-way: with the roles swapped (7B sender, 3.7B receiver, same recipe) the ridge map gives 29.0% and the
+trained projector 63.3% on the 6-name test, with the deranged cache at 5.7% and a 63% follow rate — the same
+pattern at slightly lower accuracy.
 
 ## 5. Related work (contemporaneous)
 

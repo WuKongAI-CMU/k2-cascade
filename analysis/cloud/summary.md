@@ -2,6 +2,12 @@
 
 | run | file | attr | pad | layers | n | none | text | project | derange | follow | transfer |
 |---|---|---|---|---|---|---|---|---|---|---|---|
+| analysis/cloud | fu_noma8_runs_mlp_top3_s1500_seed2_step_1500_seed0 | colour | 0 | all | 500 | 0.096 | 1.000 | 0.658 | 0.066 | 0.664 | 0.592 |
+| analysis/cloud | fu_noma8_runs_mlp_top3_s1500_seed2_step_1500_seed1 | colour | 0 | all | 500 | 0.116 | 1.000 | 0.676 | 0.060 | 0.644 | 0.616 |
+| analysis/cloud | fu_noma8_runs_ridge_top3_seed0 | colour | 0 | all | 500 | 0.096 | 1.000 | 0.204 | 0.102 | 0.234 | 0.102 |
+| analysis/cloud | fu_noma8_runs_ridge_top3_seed1 | colour | 0 | all | 500 | 0.116 | 1.000 | 0.206 | 0.114 | 0.206 | 0.092 |
+| analysis/cloud | fu_noma_rev_mlp_top3 | colour | 0 | all | 300 | 0.117 | 0.997 | 0.633 | 0.057 | 0.630 | 0.577 |
+| analysis/cloud | fu_noma_rev_ridge_top3 | colour | 0 | all | 300 | 0.117 | 0.997 | 0.290 | 0.123 | 0.313 | 0.167 |
 | analysis/cloud | noma_animal_ctrl_derange_s1500 | animal | 0 | all | 500 | 0.122 | 1.000 | 0.124 | 0.128 | 0.098 | -0.004 |
 | analysis/cloud | noma_animal_mlp_top3_s1500_seed0 | animal | 0 | all | 500 | 0.122 | 1.000 | 0.672 | 0.052 | 0.646 | 0.620 |
 | analysis/cloud | noma_animal_ridge_top3 | animal | 0 | all | 500 | 0.122 | 1.000 | 0.128 | 0.120 | 0.112 | 0.008 |
