@@ -1,0 +1,39 @@
+{
+ "none": {
+  "acc": 0.122,
+  "logp_true": -3.8380318214893343
+ },
+ "text": {
+  "acc": 1.0,
+  "logp_true": -0.008064847790403291
+ },
+ "self": {
+  "acc": 1.0,
+  "logp_true": -0.008091852246550842
+ },
+ "raw": {
+  "acc": 0.11,
+  "logp_true": -4.012039834976196
+ },
+ "project": {
+  "acc": 0.128,
+  "logp_true": -3.287778040766716
+ },
+ "derange": {
+  "acc": 0.12,
+  "logp_true": -3.640030154109001,
+  "follow_rate": 0.112
+ },
+ "content_transfer": 0.008000000000000007,
+ "retention": 0.006833712984054676,
+ "n": 500,
+ "chance": 0.125,
+ "facts_tokens": 47,
+ "layers": null,
+ "source": "/opt/hf/hub/models--IFM--K2-Horizon-3.7B/snapshots/6360f705b2e57d542959e6a2e67ebeb95dae0373",
+ "target": "/opt/hf/hub/models--IFM--K2-Horizon-7B/snapshots/d6a80e21f447768a61f1c976aa8e7d8e82a20d57",
+ "projector": "runs/ridge_top3",
+ "seed": 0,
+ "attr": "animal",
+ "pad": 0
+}

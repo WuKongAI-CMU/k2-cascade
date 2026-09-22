@@ -1,0 +1,13 @@
+{
+ "none": 2.59590233117342,
+ "oracle": 2.399855522438884,
+ "project": 2.3555598072707653,
+ "source_oracle": 2.600716246291995,
+ "derange": 2.535407241433859,
+ "retention": 1.2259445866731684,
+ "retention_derange": 0.30857472320029705,
+ "batches": 64,
+ "projector": "runs/mlp_top3_s1500_seed0/step_1500",
+ "data": "data/fresh2_1024.jsonl",
+ "eval_seqs": 128
+}

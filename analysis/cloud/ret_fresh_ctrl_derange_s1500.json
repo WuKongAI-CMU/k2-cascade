@@ -1,0 +1,13 @@
+{
+ "none": 2.59590233117342,
+ "oracle": 2.399855522438884,
+ "project": 2.4450680632144213,
+ "source_oracle": 2.600716246291995,
+ "derange": 2.4555999767035246,
+ "retention": 0.7693788485138818,
+ "retention_derange": 0.71565742577262,
+ "batches": 64,
+ "projector": "runs/ctrl_derange_s1500/step_1500",
+ "data": "data/fresh2_1024.jsonl",
+ "eval_seqs": 128
+}

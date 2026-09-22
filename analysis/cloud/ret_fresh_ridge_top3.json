@@ -1,0 +1,13 @@
+{
+ "none": 2.59590233117342,
+ "oracle": 2.399855522438884,
+ "project": 2.654360193759203,
+ "source_oracle": 2.600716246291995,
+ "derange": 2.7251148857176304,
+ "retention": -0.29818318881660477,
+ "retention_derange": -0.6590903232664964,
+ "batches": 64,
+ "projector": "runs/ridge_top3",
+ "data": "data/fresh2_1024.jsonl",
+ "eval_seqs": 128
+}

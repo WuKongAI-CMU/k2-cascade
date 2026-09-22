@@ -1,0 +1,39 @@
+{
+ "none": {
+  "acc": 0.106,
+  "logp_true": -2.5859429116249086
+ },
+ "text": {
+  "acc": 1.0,
+  "logp_true": -0.005414348688907921
+ },
+ "self": {
+  "acc": 1.0,
+  "logp_true": -0.0054501868556253615
+ },
+ "raw": {
+  "acc": 0.124,
+  "logp_true": -3.2690687003135683
+ },
+ "project": {
+  "acc": 0.63,
+  "logp_true": -1.0219200123045593
+ },
+ "derange": {
+  "acc": 0.046,
+  "logp_true": -5.434982397697866,
+  "follow_rate": 0.637
+ },
+ "content_transfer": 0.584,
+ "retention": 0.5861297539149888,
+ "n": 1000,
+ "chance": 0.125,
+ "facts_tokens": 39,
+ "layers": null,
+ "source": "/opt/hf/hub/models--IFM--K2-Horizon-3.7B/snapshots/6360f705b2e57d542959e6a2e67ebeb95dae0373",
+ "target": "/opt/hf/hub/models--IFM--K2-Horizon-7B/snapshots/d6a80e21f447768a61f1c976aa8e7d8e82a20d57",
+ "projector": "runs/mlp_top3_s1500_seed0/step_1500",
+ "seed": 0,
+ "attr": "colour",
+ "pad": 0
+}

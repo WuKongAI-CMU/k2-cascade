@@ -1,0 +1,39 @@
+{
+ "none": {
+  "acc": 0.142,
+  "logp_true": -3.019703775882721
+ },
+ "text": {
+  "acc": 1.0,
+  "logp_true": -0.006500307473121211
+ },
+ "self": {
+  "acc": 1.0,
+  "logp_true": -0.006589196434244514
+ },
+ "raw": {
+  "acc": 0.122,
+  "logp_true": -3.298136878490448
+ },
+ "project": {
+  "acc": 0.198,
+  "logp_true": -2.346818171262741
+ },
+ "derange": {
+  "acc": 0.118,
+  "logp_true": -2.8009040102958678,
+  "follow_rate": 0.184
+ },
+ "content_transfer": 0.08000000000000002,
+ "retention": 0.06526806526806529,
+ "n": 500,
+ "chance": 0.125,
+ "facts_tokens": 47,
+ "layers": null,
+ "source": "/opt/hf/hub/models--IFM--K2-Horizon-3.7B/snapshots/6360f705b2e57d542959e6a2e67ebeb95dae0373",
+ "target": "/opt/hf/hub/models--IFM--K2-Horizon-7B/snapshots/d6a80e21f447768a61f1c976aa8e7d8e82a20d57",
+ "projector": "runs/ridge_top3",
+ "seed": 0,
+ "attr": "city",
+ "pad": 0
+}

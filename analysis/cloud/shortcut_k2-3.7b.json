@@ -1,0 +1,59 @@
+{
+ "trace_model": "k2-3.7b",
+ "n": 127,
+ "n_rejected": 19,
+ "n_runs": 26,
+ "features": [
+  "step",
+  "attempt",
+  "prior_rejects",
+  "accepted_so_far",
+  "prompt_kchars",
+  "last=shell",
+  "last=read",
+  "last=write",
+  "any_prior_reject"
+ ],
+ "all_metadata": {
+  "auroc": 0.702729044834308,
+  "lo": 0.5411589635854341,
+  "hi": 0.8470297057502246
+ },
+ "single_feature_best_direction": {
+  "step": 0.71,
+  "attempt": 0.625,
+  "prior_rejects": 0.686,
+  "accepted_so_far": 0.589,
+  "prompt_kchars": 0.57,
+  "last=shell": 0.651,
+  "last=read": 0.553,
+  "last=write": 0.64,
+  "any_prior_reject": 0.666
+ },
+ "incremental_1d": {
+  "probe_alone": {
+   "auroc": 0.8813352826510721,
+   "lo": 0.7876961305521677,
+   "hi": 0.9553081944681011
+  },
+  "metadata_only": {
+   "auroc": 0.702729044834308,
+   "lo": 0.5411589635854341,
+   "hi": 0.8470297057502246
+  },
+  "metadata_plus_probe": {
+   "auroc": 0.8352826510721247,
+   "lo": 0.6924841504071706,
+   "hi": 0.947196261682243
+  },
+  "delta_over_metadata": 0.13255360623781676,
+  "spearman_metadata_vs_probe": 0.38630271821544865
+ },
+ "probe_best_layer": {
+  "layer": 16,
+  "auroc": 0.8813352826510721,
+  "lo": 0.7876961305521677,
+  "hi": 0.9553081944681011
+ },
+ "probe_median_layer": 0.8550194931773879
+}
