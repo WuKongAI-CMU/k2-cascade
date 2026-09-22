@@ -5,6 +5,7 @@
 #   k2-commit   repo commit to check out
 #   k2-bucket   gs://bucket for results
 #   k2-run      run id; results land in gs://bucket/<run>/
+#   k2-env      optional space-separated VAR=value pairs exported to the job
 set -uo pipefail
 md() { curl -sf -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/$1"; }
 JOB=$(md attributes/k2-job); COMMIT=$(md attributes/k2-commit); BUCKET=$(md attributes/k2-bucket); RUN=$(md attributes/k2-run)
@@ -49,5 +50,6 @@ export SRC=$(.venv/bin/python -c "import json;print(json.load(open('model_revisi
 export TGT=$(.venv/bin/python -c "import json;print(json.load(open('model_revisions.json'))['IFM/K2-Horizon-7B']['path'])")
 export HF_HUB_OFFLINE=1 PY="$PWD/.venv/bin/python" OUT
 mkdir -p analysis logs runs data
+for kv in $(md attributes/k2-env 2>/dev/null); do export "$kv"; done
 status "RUNNING $JOB"
 bash "cloud/jobs/$JOB.sh"

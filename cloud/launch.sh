@@ -17,7 +17,7 @@ for Z in us-central1-a us-central1-b us-central1-c us-central1-f; do
       --boot-disk-size="${K2_DISK:-200GB}" --boot-disk-type=pd-balanced \
       --image-family="${K2_IMAGE_FAMILY:-common-cu129-ubuntu-2204-nvidia-580}" --image-project="${K2_IMAGE_PROJECT:-deeplearning-platform-release}" \
       --scopes=cloud-platform --labels=purpose=k2,run="$RUN" \
-      --metadata=install-nvidia-driver=True,k2-job="$JOB",k2-commit="$COMMIT",k2-bucket="$BUCKET",k2-run="$RUN" \
+      --metadata=install-nvidia-driver=True,k2-job="$JOB",k2-commit="$COMMIT",k2-bucket="$BUCKET",k2-run="$RUN",k2-env="${K2_ENV:-none}" \
       --metadata-from-file=startup-script=cloud/startup.sh >/tmp/k2-launch.err 2>&1; then
     echo "launched $NAME in $Z ($MODEL, max ${HOURS}h, commit ${COMMIT:0:7})"
     echo "status:  cloud/status.sh $RUN"; exit 0
