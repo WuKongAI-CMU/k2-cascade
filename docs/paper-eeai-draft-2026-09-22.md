@@ -67,8 +67,11 @@ how often the answer is the *other* episode's value.
 | + residual, 1500 steps | 10.6 | 100 | 14 | **63.0** | 4.6 | **63.7** | 58.4 |
 | residual trained with deranged sender | 10.6 | 100 | 14 | 23.4 | 11.3 | 22.7 | 12.1 |
 
-On the original 6-name variant (n = 300) the trained projector reaches 71.3% (seed 0) and 73.0% (seed 1)
-[seed 2 pending]. Matching shape alone (*raw*) does nothing. The follow rate is the decisive number: when the
+On the original 6-name variant (n = 300) three training seeds give 71.3 / 73.0 / 75.3% (mean 73.2, sd 2.0).
+Two ablations on the same variant: freezing the ridge and training only the residual gives 59.0%, so
+letting the linear map move during training is worth ~14 points; replacing the correlation-selected top-3
+source layers with the aligned-layer map gives 32.7%, so which sender layers feed each receiver layer is the
+single largest design choice. Matching shape alone (*raw*) does nothing. The follow rate is the decisive number: when the
 receiver is handed the wrong episode's cache it answers with the wrong episode's value 64% of the time, and its
 accuracy falls below chance. The receiver believes the cache.
 
@@ -109,7 +112,7 @@ It shows that a specific fact can cross from a 3.7B cache into a 7B without text
 the cache's content, and that the receiver reads it out from its later layers. It does not show that the channel
 is cheaper than text (a 512-token cache is ~75 MB against ~1 KB of text; compression is future work), that it
 carries anything richer than a single-token binding, or that it works across model families. The reverse
-direction (7B → 3.7B) and a frozen-ridge ablation are running [pending].
+direction (7B → 3.7B) is running [pending].
 
 ## 5. Related work (contemporaneous)
 
