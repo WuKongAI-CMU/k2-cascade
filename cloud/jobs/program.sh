@@ -6,7 +6,7 @@ MAX_HOURS=${K2_MAX_HOURS:-40}
 T0=$SECONDS
 note() { echo "[program $(date -u +%H:%MZ) +$(( (SECONDS - T0) / 60 ))m] $*" | tee -a logs/program.log; gcloud storage cp logs/program.log "$OUT/logs/program.log" --quiet >/dev/null 2>&1 || true; }
 done_p() { gcloud storage ls "$OUT/phases/$1.done" >/dev/null 2>&1; }
-mark() { echo ok | gcloud storage cp - "$OUT/phases/$1.done" --quiet; gcloud storage cp -r analysis logs "$OUT/" --quiet; }
+mark() { echo ok | gcloud storage cp - "$OUT/phases/$1.done" --quiet; gcloud storage cp -r analysis logs "$OUT/" --quiet; gcloud storage rsync -r runs "$OUT/runs" --quiet >/dev/null 2>&1 || true; }
 hours_left() { echo $(( MAX_HOURS - (SECONDS - T0) / 3600 )); }
 acc() { $PY -c "import json,sys;d=json.load(open(sys.argv[1]));print(d['project']['acc'])" "$1"; }
 xfer() { $PY -c "import json,sys;d=json.load(open(sys.argv[1]));print(d['content_transfer'])" "$1"; }
