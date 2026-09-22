@@ -66,3 +66,30 @@ def test_run_reports_all_arms(source, target):
         assert 0.0 <= out[a]["acc"] <= 1.0 and out[a]["logp_true"] <= 0.0
     assert out["n"] == 12 and 0.0 <= out["derange"]["follow_rate"] <= 1.0
     assert "content_transfer" in out and "retention" in out
+
+
+def test_padding_keeps_layouts_identical_and_other_attrs_encode():
+    for attr in ("colour", "city", "animal"):
+        enc = Encoder(FakeTok(), 8, 8, attr=attr, pad=96)
+        eps = make_episodes(6, 8, 8, seed=4)
+        lens = {len(enc.facts(e)) for e in eps}
+        assert lens == {96}, (attr, lens)
+        assert len(enc.question(eps[0])) > 0
+
+
+def test_layer_subset_all_layers_equals_project(target):
+    enc = Encoder(FakeTok(), 3, 4)
+    e = make_episodes(2, 3, 4, seed=5)
+    f, pf, q = (torch.tensor([x]) for x in (enc.facts(e[0]), enc.facts(e[1]), enc.question(e[0])))
+    proj = identity_projector(target)
+    L = target.config.num_hidden_layers
+    full = arm_logprobs("project", target, target, proj, f, pf, q, layers=set(range(L)))
+    assert torch.allclose(full, arm_logprobs("project", target, target, proj, f, pf, q), atol=1e-4)
+    none_ = arm_logprobs("project", target, target, proj, f, pf, q, layers=set())
+    assert torch.allclose(none_, arm_logprobs("derange", target, target, proj, f, pf, q), atol=1e-4)
+
+
+def test_run_arm_subset(source, target):
+    enc = Encoder(FakeTok(), 3, 4)
+    out = run(source, target, identity_projector(target), enc, make_episodes(4, 3, 4, seed=6), arms=("project", "derange"))
+    assert set(out) >= {"project", "derange", "content_transfer"} and "retention" not in out

@@ -53,6 +53,7 @@ class TrainConfig:
     resume: bool = False
     wandb: bool = False
     seed: int = 0
+    derange_source: bool = False  # control: sender reads the previous micro-batch's prefix (no content to carry)
 
 
 def parse_args(argv=None) -> TrainConfig:
@@ -143,7 +144,7 @@ def train(cfg: TrainConfig, src: nn.Module, tgt: nn.Module, proj: MLPProjector, 
         run = wandb.init(project="k2-kv-projector", config=asdict(cfg), resume="allow")
     dev = next(tgt.parameters()).device
     use_bf16 = cfg.bf16 and dev.type == "cuda"
-    losses, t0 = [], time.time()
+    losses, t0, prev_prefix = [], time.time(), None
     while step < cfg.steps:
         for g in opt.param_groups:
             g["lr"] = lr_at(step, cfg)
@@ -152,8 +153,10 @@ def train(cfg: TrainConfig, src: nn.Module, tgt: nn.Module, proj: MLPProjector, 
         for _ in range(cfg.accum):
             ids = next(data)
             prefix, cont = ids[:, :cfg.prefix_len], ids[:, cfg.prefix_len:]
+            src_prefix = prev_prefix if (cfg.derange_source and prev_prefix is not None) else None
+            prev_prefix = prefix
             with torch.autocast(dev.type, dtype=torch.bfloat16, enabled=use_bf16):
-                cache = projected_cache(src, tgt, proj, prefix, grad=True)
+                cache = projected_cache(src, tgt, proj, prefix, grad=True, source_prefix=src_prefix)
                 loss = continuation_loss(tgt, cont, cache, cfg.prefix_len) / cfg.accum
             loss.backward()
             total += loss.item()
