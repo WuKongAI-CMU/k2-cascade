@@ -8,7 +8,7 @@ PROJECT=${K2_PROJECT:-less-more-475623}; BUCKET=${K2_BUCKET:-gs://k2-cascade-run
 [ -f "cloud/jobs/$JOB.sh" ] || { echo "no cloud/jobs/$JOB.sh"; exit 1; }
 COMMIT=$(git rev-parse HEAD)
 git fetch -q origin && git merge-base --is-ancestor "$COMMIT" origin/main || { echo "commit $COMMIT is not pushed to origin/main"; exit 1; }
-RUN="$(echo "$JOB" | tr '_' '-')-$(date -u +%Y%m%d-%H%M%S)"; NAME="k2-$RUN"
+RUN="${K2_RUN:-$(echo "$JOB" | tr '_' '-')-$(date -u +%Y%m%d-%H%M%S)}"; NAME="k2-$RUN"
 PROV=(--provisioning-model=SPOT --instance-termination-action=DELETE)
 [ "$MODEL" = standard ] && PROV=(--provisioning-model=STANDARD --instance-termination-action=DELETE)
 for Z in us-central1-a us-central1-b us-central1-c us-central1-f; do
