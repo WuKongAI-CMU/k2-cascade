@@ -5,7 +5,9 @@
 #   k2-commit   repo commit to check out
 #   k2-bucket   gs://bucket for results
 #   k2-run      run id; results land in gs://bucket/<run>/
-#   k2-env      optional space-separated VAR=value pairs exported to the job
+#   k2-env      optional space-separated VAR=value pairs exported to the job. Two are read here:
+#               K2_NEXT=job|hours|model launches that job when this one succeeds (chaining stays in the cloud),
+#               K2_NEXT_ENV=A=1;B=2 becomes the next job's k2-env.
 set -uo pipefail
 md() { curl -sf -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/$1"; }
 JOB=$(md attributes/k2-job); COMMIT=$(md attributes/k2-commit); BUCKET=$(md attributes/k2-bucket); RUN=$(md attributes/k2-run)
@@ -52,4 +54,10 @@ export HF_HUB_OFFLINE=1 PY="$PWD/.venv/bin/python" OUT
 mkdir -p analysis logs runs data
 for kv in $(md attributes/k2-env 2>/dev/null); do export "$kv"; done
 status "RUNNING $JOB"
-bash "cloud/jobs/$JOB.sh"
+bash "cloud/jobs/$JOB.sh"; rc=$?
+if [ "$rc" -eq 0 ] && [ -n "${K2_NEXT:-}" ]; then
+  IFS='|' read -r NJOB NHOURS NMODEL <<<"$K2_NEXT"
+  status "CHAINING $NJOB"
+  K2_ENV="${K2_NEXT_ENV//;/ }" bash cloud/launch.sh "$NJOB" "${NHOURS:-4}" "${NMODEL:-standard}" 2>&1 | tail -2
+fi
+exit "$rc"
