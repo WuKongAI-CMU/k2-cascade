@@ -75,6 +75,10 @@ single largest design choice. Matching shape alone (*raw*) does nothing. The fol
 receiver is handed the wrong episode's cache it answers with the wrong episode's value 64% of the time, and its
 accuracy falls below chance. The receiver believes the cache.
 
+With the full 8-name pool and 500 episodes, the seed-2 projector gives 65.8% and 67.6% on two episode seeds
+(ridge: 20.4%, 20.6%). On 256 fresh held-out sequences deduplicated against training text, continuation
+retention is 1.19 for the trained projector and −0.38 for the ridge.
+
 **Other attributes.** Same protocol with cities ("Vela lives in Paris") and animals ("Vela is a fox"), n = 500:
 trained projector 61.8% and 67.2%; ridge 19.8% and 12.8%; deranged-sender control 15.4% and 12.4%.
 
