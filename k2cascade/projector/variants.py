@@ -54,8 +54,9 @@ def ask_judge(client, context: str, question: str, answer: str, tries: int = 2) 
     for attempt in range(tries):
         try:
             r = _post_with_retry(client.client, "/chat/completions", json={
-                "model": client.model, "messages": [{"role": "user", "content": q}], "max_tokens": 900,
-                "temperature": 0, "reasoning_effort": "low"})
+                "model": client.model, "max_tokens": 300, "temperature": 0, "reasoning_effort": "low",
+                "messages": [{"role": "system", "content": "Reply with a single JSON object and nothing else."},
+                             {"role": "user", "content": q}]})
             body = r.json()
             txt = body["choices"][0]["message"]["content"] or ""
         except Exception as e:  # rate limit / server error bodies have no "choices"; back off and retry
