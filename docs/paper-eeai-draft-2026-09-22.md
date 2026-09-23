@@ -108,6 +108,27 @@ On F1 the trained projector recovers 96% of the gap between question-only and re
 log-probability it recovers 69%. The wrong passage's cache (derange), the ridge map, and the content-free
 projector all sit at or below question-only. The channel carries the passage, not a bias toward answering.
 
+**Across families (Table 2d).** With Qwen3-4B as the sender (36 layers, 8 KV heads, head dim 128 — matched
+KV geometry — but a different vocabulary and pre-training), receiver positions are aligned to sender tokens by
+character offsets and the same recipe is run: top-3 ridge 18.0% (raw injection 15.7%, deranged 13.0%), trained
+projector **76.7%** on the 6-name binding test (deranged 1.3%, follow rate 80%), SQuAD F1 48.0 against 54.7 for
+the receiver reading the text. Cross-family transfer is as strong as within-family on the binding test and
+within 7 F1 of it on passages, and the linear map alone does nothing across families. [K2-0.9B, a same-family
+sender with a different vocabulary and head dimension 64, pending.]
+
+**What the message costs (Table 2e).** The full mapped cache is 36 layers × 8 heads × 2 × 128 × bf16 = 144 KB
+per token, 75 MB for a 512-token prefix, against ~1 KB of text; the projector has 151 M parameters. Two things
+shrink it for free and two do not. int8 and int4 fake-quantisation of the mapped cache keep binding accuracy
+(76.0 / 75.0 vs 75.3%) and SQuAD F1 (52.1 / 51.6 vs 53.0) — bytes ÷4. A projector with bottleneck 32 has 70 M
+parameters and keeps SQuAD F1 (53.7) while losing 9 points on the binding test (64.3%) [bottleneck 16 pending].
+Dropping layers or heads with zeros in their place collapses transfer (layers 18–35 only: 24.3%; 4 heads: 25.7%),
+unlike the layer-band experiment where the other layers carried a *plausible* cache; an all-zero layer makes the
+receiver attend uniformly to nothing and drowns the question [mean-vector fill pending]. Low-rank truncation of
+each (positions × head-dim) matrix keeps the binding test (rank 32/16: 75.0%) but not passages (F1 45.3 / 29.6).
+Latency on one A100: the receiver re-reading 512 tokens takes 48 ms, the projector 24 ms (2.0×; the sender's own
+read, 45 ms, is already paid). The message is therefore cheap in time and expensive in bytes; the honest framing
+is that the channel is worth it when the sender's state is the point — which the next experiment tests.
+
 **Does the cache carry how sure the sender was? (Table 2c).** Following the knowledge-conflict and
 semantic-entropy protocols (Longpre et al. 2021; Xie et al. 2023; Farquhar et al. 2024), each SQuAD item gets
 three passages: *clean*, *contradicted* (one fluent sentence asserting a counter-answer, written by the 375B
