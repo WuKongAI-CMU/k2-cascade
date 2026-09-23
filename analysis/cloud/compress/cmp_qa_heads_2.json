@@ -1,0 +1,35 @@
+{
+ "project": {
+  "logp": -5.232470312714577,
+  "logp_first": -6.508287342910966,
+  "p_gold": 0.060892081313643126,
+  "entropy": 5.689575272401174,
+  "em": 0.0033333333333333335,
+  "f1": 0.058761216547022176
+ },
+ "derange": {
+  "logp": -5.790019905964534,
+  "logp_first": -7.121127416590849,
+  "p_gold": 0.04718935228830219,
+  "entropy": 5.97757408897082,
+  "em": 0.006666666666666667,
+  "f1": 0.06639951606128075
+ },
+ "content_f1": -0.007638299514258574,
+ "n": 300,
+ "max_new": 8,
+ "variant": "clean",
+ "source": "/opt/hf/hub/models--IFM--K2-Horizon-3.7B/snapshots/6360f705b2e57d542959e6a2e67ebeb95dae0373",
+ "target": "/opt/hf/hub/models--IFM--K2-Horizon-7B/snapshots/d6a80e21f447768a61f1c976aa8e7d8e82a20d57",
+ "projector": "runs/mlp_seed2",
+ "seed": 0,
+ "compress": {
+  "spec": "heads=2",
+  "layers": 36,
+  "heads": 2,
+  "bits": 16,
+  "rank": null,
+  "bytes_per_token": 36864.0,
+  "bytes_per_token_full": 147456
+ }
+}

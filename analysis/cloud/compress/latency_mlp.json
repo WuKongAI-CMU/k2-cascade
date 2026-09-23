@@ -1,0 +1,10 @@
+{
+ "prefix": 512,
+ "device": "NVIDIA A100-SXM4-40GB",
+ "receiver_prefill_s": 0.04797726189999878,
+ "sender_prefill_s": 0.044747063349998936,
+ "projector_forward_s": 0.02429245749999893,
+ "handoff_s": 0.02429245749999893,
+ "speedup_vs_reprefill": 1.9749859354493422,
+ "projector_params_M": 151.06896
+}

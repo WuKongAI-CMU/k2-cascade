@@ -17,7 +17,7 @@ def main() -> None:
     ap.add_argument("--out", default="data/hotpot_split.jsonl")
     a = ap.parse_args()
     from datasets import load_dataset
-    ds = load_dataset("hotpot_qa", "distractor", split="validation").shuffle(seed=a.seed)
+    ds = load_dataset("hotpotqa/hotpot_qa", "distractor", split="validation").shuffle(seed=a.seed)
     rng = random.Random(a.seed)
     n = 0
     with open(a.out, "w") as f:
