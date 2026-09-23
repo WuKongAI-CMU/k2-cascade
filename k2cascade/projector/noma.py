@@ -192,6 +192,7 @@ def main(argv=None) -> None:
     ap.add_argument("--attr", default="colour", choices=list(ATTRS)); ap.add_argument("--pad", type=int, default=0)
     ap.add_argument("--layers", default=None, help="receiver layers that get this episode's cache, e.g. 0-11 or 3,7")
     ap.add_argument("--arms", default=",".join(ARMS))
+    ap.add_argument("--compress", default=None, help="message compression spec, see compress.py (e.g. int8,layers=18-35)")
     a = ap.parse_args(argv)
     layers = None
     if a.layers:
@@ -209,9 +210,13 @@ def main(argv=None) -> None:
         proj = MLPProjector.load(a.projector, dev)
     else:
         proj = RidgeProjector.load(a.projector, dev)
+    if a.compress and proj is not None:
+        from .compress import Compressed
+        proj = Compressed(proj, a.compress)
     enc = Encoder(tok, a.names, a.colours, a.attr, a.pad)
     res = run(src, tgt, proj, enc, make_episodes(a.episodes, a.names, a.colours, a.seed), tuple(a.arms.split(",")), layers)
-    res.update(source=a.source, target=a.target, projector=a.projector, seed=a.seed, attr=a.attr, pad=a.pad)
+    res.update(source=a.source, target=a.target, projector=a.projector, seed=a.seed, attr=a.attr, pad=a.pad,
+               compress=getattr(proj, "info", None))
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=1))
     print(json.dumps(res, indent=1))

@@ -59,8 +59,10 @@ class QAEncoder:
         ids = self.tok("Passage: " + text.strip(), add_special_tokens=False)["input_ids"][: self.max_passage]
         return self.bos + ids
 
-    def question(self, q: str) -> list[int]:
-        return self.tok(f"\n\nQuestion: {q.strip()}\nAnswer:", add_special_tokens=False)["input_ids"]
+    def question(self, q: str, receiver_ctx: str | None = None) -> list[int]:
+        """Receiver-side text: optionally its own passage (the different-context setting), then the question."""
+        own = f"\n\nPassage: {receiver_ctx.strip()}" if receiver_ctx else ""
+        return self.tok(f"{own}\n\nQuestion: {q.strip()}\nAnswer:", add_special_tokens=False)["input_ids"]
 
     def answer(self, a: str) -> list[int]:
         return self.tok(" " + a.strip(), add_special_tokens=False)["input_ids"]
@@ -161,7 +163,7 @@ def run(src, tgt, projector, tok, examples: list[dict], arms=ARMS, max_new: int 
         pa = torch.tensor([enc.passage(ctx)], device=dev)
         other = prev if prev is not None else pa
         prev = pa
-        q = torch.tensor([enc.question(ex["question"])], device=dev)
+        q = torch.tensor([enc.question(ex["question"], ex.get("context_receiver"))], device=dev)
         ans = torch.tensor([enc.answer(ex["answers"][0])], device=dev)
         counter = torch.tensor([enc.answer(ex["counter_answer"])], device=dev) if ex.get("counter_answer") else None
         row, text_dist = {"i": i, "id": ex.get("id"), "variant": variant}, None
@@ -208,6 +210,7 @@ def main(argv=None) -> None:
     ap.add_argument("--data", default=None, help="jsonl with context/question/answers; default: SQuAD validation")
     ap.add_argument("--variant", default="clean", choices=("clean", "contradicted", "removed"))
     ap.add_argument("--per_item", default=None, help="jsonl path for per-item measurements")
+    ap.add_argument("--compress", default=None, help="message compression spec, see compress.py")
     a = ap.parse_args(argv)
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     src, tgt, tok = load_models(TrainConfig(source=a.source, target=a.target), dev)
@@ -219,12 +222,15 @@ def main(argv=None) -> None:
         proj = MLPProjector.load(a.projector, dev)
     else:
         proj = RidgeProjector.load(a.projector, dev)
+    if a.compress and proj is not None:
+        from .compress import Compressed
+        proj = Compressed(proj, a.compress)
     examples = [json.loads(l) for l in open(a.data)][: a.n] if a.data else load_squad(a.n, a.seed)
     pi = open(a.per_item, "w") if a.per_item else None
     res = run(src, tgt, proj, tok, examples, tuple(a.arms.split(",")), a.max_new, variant=a.variant, per_item=pi)
     if pi:
         pi.close()
-    res.update(source=a.source, target=a.target, projector=a.projector, seed=a.seed)
+    res.update(source=a.source, target=a.target, projector=a.projector, seed=a.seed, compress=getattr(proj, "info", None))
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=1))
     print(json.dumps(res, indent=1))
