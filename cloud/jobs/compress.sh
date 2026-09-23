@@ -5,7 +5,7 @@ note() { echo "[compress $(date -u +%H:%MZ)] $*" | tee -a logs/compress.log; gcl
 gcloud storage rsync -r "$FROM/runs/mlp_top3_s1500_seed2/step_1500" runs/mlp_seed2 --quiet
 gcloud storage rsync -r "$FROM/runs/ridge_top3" runs/ridge_top3 --quiet
 gcloud storage cp "$BK/shared/squad_600.jsonl" data/ --quiet 2>/dev/null || HF_HUB_OFFLINE=0 $PY -c "from k2cascade.projector.qa import load_squad; import json; open('data/squad_600.jsonl','w').writelines(json.dumps(e)+'\n' for e in load_squad(600, 0))"
-SPECS=$(echo "${K2_SPECS:-none int8 int4 layers=18-35 layers=18-35,int8 heads=4 heads=2 rank=32 rank=16 rank=8}" | tr "|" " ")  # K2_ENV cannot carry spaces
+SPECS=$(echo "${K2_SPECS:-none int8 int4 layers=18-35 layers=18-35,int8 heads=4 heads=2 rank=32 rank=16 rank=8}" | tr "|;" " ,")  # K2_ENV cannot carry spaces; gcloud metadata cannot carry commas
 if [ "${K2_ONLY_SWEEP:-0}" != 1 ]; then
 # latency
 $PY -m k2cascade.projector.latency --source "$SRC" --target "$TGT" --projector runs/mlp_seed2 --prefix 512 --out analysis/latency_mlp.json > logs/latency.log 2>&1
