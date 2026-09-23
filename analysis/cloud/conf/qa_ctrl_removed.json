@@ -1,0 +1,29 @@
+{
+ "text": {
+  "logp": -2.839746670607871,
+  "logp_first": -4.465027452648016,
+  "p_gold": 0.1908296634074079,
+  "p_counter": 0.15238238915170102,
+  "entropy": 2.936895263738283,
+  "jsd_text": -2.7985216067654975e-09,
+  "em": 0.015332197614991482,
+  "f1": 0.20158643285209096
+ },
+ "project": {
+  "logp": -3.776807743884636,
+  "logp_first": -5.591990324251316,
+  "p_gold": 0.15409695770810644,
+  "p_counter": 0.14452362642129107,
+  "entropy": 3.4831132293762908,
+  "jsd_text": 0.1835680637775176,
+  "em": 0.0068143100511073255,
+  "f1": 0.13810582833163115
+ },
+ "n": 587,
+ "max_new": 8,
+ "variant": "removed",
+ "source": "/opt/hf/hub/models--IFM--K2-Horizon-3.7B/snapshots/6360f705b2e57d542959e6a2e67ebeb95dae0373",
+ "target": "/opt/hf/hub/models--IFM--K2-Horizon-7B/snapshots/d6a80e21f447768a61f1c976aa8e7d8e82a20d57",
+ "projector": "runs/ctrl_derange",
+ "seed": 0
+}
