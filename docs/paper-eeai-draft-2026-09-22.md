@@ -166,6 +166,13 @@ ahead (.25 > .22) and its F1 is higher (49.0 vs 45.2). Across all conditions the
 the text path on clean passages (P(gold) .28 vs .44), so a receiver that treats the two channels as equivalent
 would under-trust the cache; per-channel calibration is the obvious fix.
 
+A first attempt to train the loss away did not work: adding KL(text-path ‖ cache-path) on the receiver's
+next-token distributions to the projector's objective (weight 1, 1000 steps) raises the cache path's entropy
+everywhere (clean 2.38 vs 1.78) without making it track the sender better (AUROC .590 / .589 / .611; drop ratio
+.56 vs .54) and costs 2 F1. Matching the receiver's own text-path distribution is the wrong target: what is lost
+is the *sender's* spread, which the receiver's text path does not contain either. A sender-side target (matching
+the receiver's cache-path entropy to the sender's semantic entropy) is the next experiment, not this paper's.
+
 **Continuation retention is the wrong headline (Table 3).** Following the closed-form-map literature we also
 report retention = (loss_none − loss_project)/(loss_none − loss_oracle) on 128 fresh held-out sequences.
 
