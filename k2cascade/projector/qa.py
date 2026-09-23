@@ -23,6 +23,8 @@ from .extract import extract, make_cache
 
 ARMS = ("none", "text", "self", "raw", "project", "derange")
 CONTROL_ARMS = ("zero", "random")
+# "verbal": the text channel with the sender's uncertainty written down — the receiver reads only the sender's
+# answer and a confidence word (fields sender_answer / sender_conf on the example), never the passage.
 
 
 def normalize(s: str) -> str:
@@ -59,9 +61,12 @@ class QAEncoder:
         ids = self.tok("Passage: " + text.strip(), add_special_tokens=False)["input_ids"][: self.max_passage]
         return self.bos + ids
 
-    def question(self, q: str, receiver_ctx: str | None = None) -> list[int]:
-        """Receiver-side text: optionally its own passage (the different-context setting), then the question."""
+    def question(self, q: str, receiver_ctx: str | None = None, verbal: tuple[str, str] | None = None) -> list[int]:
+        """Receiver-side text: optionally its own passage (the different-context setting) or the sender's verbal
+        handoff (answer + confidence word), then the question."""
         own = f"\n\nPassage: {receiver_ctx.strip()}" if receiver_ctx else ""
+        if verbal:
+            own += f"\n\nA smaller model that read the passage answered: {verbal[0].strip()} (confidence: {verbal[1]})."
         return self.tok(f"{own}\n\nQuestion: {q.strip()}\nAnswer:", add_special_tokens=False)["input_ids"]
 
     def answer(self, a: str) -> list[int]:
@@ -164,14 +169,23 @@ def run(src, tgt, projector, tok, examples: list[dict], arms=ARMS, max_new: int 
         other = prev if prev is not None else pa
         prev = pa
         q = torch.tensor([enc.question(ex["question"], ex.get("context_receiver"))], device=dev)
+        qv = None
+        if "verbal" in arms and ex.get("sender_answer") is not None:
+            qv = torch.tensor([enc.question(ex["question"], ex.get("context_receiver"),
+                                            (ex["sender_answer"], ex.get("sender_conf", "unknown")))], device=dev)
         ans = torch.tensor([enc.answer(ex["answers"][0])], device=dev)
         counter = torch.tensor([enc.answer(ex["counter_answer"])], device=dev) if ex.get("counter_answer") else None
         row, text_dist = {"i": i, "id": ex.get("id"), "variant": variant}, None
         for a in arms:
             if a in ("project", "derange", "zero", "random") and projector is None:
                 continue
-            cache, plen = prefix_cache(a, src, tgt, projector, pa, other, seed=i)
-            r = score_item(tgt, cache, plen, q, ans, enc.bos, max_new, newline_ids, counter)
+            if a == "verbal":
+                if qv is None:
+                    continue
+                r = score_item(tgt, None, 0, qv, ans, enc.bos, max_new, newline_ids, counter)
+            else:
+                cache, plen = prefix_cache(a, src, tgt, projector, pa, other, seed=i)
+                r = score_item(tgt, cache, plen, q, ans, enc.bos, max_new, newline_ids, counter)
             pred = tok.decode(r.pop("tokens"))
             dist = r.pop("first_dist")
             if a == "text":

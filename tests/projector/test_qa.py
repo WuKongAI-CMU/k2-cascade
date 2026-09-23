@@ -45,3 +45,9 @@ def test_run_all_arms_and_controls(source, target, tmp_path):
     assert "content_f1" in out and out["n"] == 3 and "p_counter" in out["project"]
     rows = [json.loads(l) for l in buf.getvalue().splitlines()]
     assert len(rows) == 3 and set(arms) <= set(rows[0])
+
+
+def test_verbal_arm_uses_sender_answer_without_passage(source, target):
+    ex = [dict(e, sender_answer=e["answers"][0], sender_conf="high") for e in EX]
+    out = run(source, target, identity_projector(target), QATok(), ex, arms=("none", "verbal", "text"), max_new=3)
+    assert "verbal" in out and out["verbal"]["logp"] <= 0.0
