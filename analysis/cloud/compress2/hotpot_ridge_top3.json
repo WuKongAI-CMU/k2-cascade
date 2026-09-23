@@ -1,0 +1,35 @@
+{
+ "project": {
+  "logp": -1.6656633645365946,
+  "logp_first": -2.6938614340918137,
+  "p_gold": 0.37210180003143356,
+  "entropy": 2.6416896729171278,
+  "em": 0.0,
+  "f1": 0.2625565609785816
+ },
+ "derange": {
+  "logp": -1.743414177093073,
+  "logp_first": -2.8304230048600583,
+  "p_gold": 0.3688952203214501,
+  "entropy": 2.6448645197972653,
+  "em": 0.0025,
+  "f1": 0.26188081363081384
+ },
+ "zero": {
+  "logp": -2.2466319041419776,
+  "logp_first": -3.228730043331161,
+  "p_gold": 0.2142721048988216,
+  "entropy": 3.9403312053531407,
+  "em": 0.0,
+  "f1": 0.20876012729960117
+ },
+ "content_f1": 0.0006757473477677634,
+ "n": 400,
+ "max_new": 12,
+ "variant": "clean",
+ "source": "/opt/hf/hub/models--IFM--K2-Horizon-3.7B/snapshots/6360f705b2e57d542959e6a2e67ebeb95dae0373",
+ "target": "/opt/hf/hub/models--IFM--K2-Horizon-7B/snapshots/d6a80e21f447768a61f1c976aa8e7d8e82a20d57",
+ "projector": "runs/ridge_top3",
+ "seed": 0,
+ "compress": null
+}
