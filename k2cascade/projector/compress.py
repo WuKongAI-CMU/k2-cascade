@@ -5,6 +5,8 @@ spec strings (comma-separated, applied in order):
   layers=18-35        zero every receiver layer outside the band (the receiver still attends, to nothing)
   heads=4             keep the first k KV heads per layer, zero the rest
   rank=16             truncated SVD of each (T, d) per-head matrix
+  fill=mean           untransmitted layers/heads carry the per-(layer, head) position-mean of the projected cache
+                      (a one-vector summary, 1/T of the bytes) instead of zeros
 
 `bytes_per_token(keys, values, spec)` reports the message size the spec implies (bf16 = 2 bytes per element).
 """
@@ -37,7 +39,7 @@ def _low_rank(x: torch.Tensor, r: int) -> torch.Tensor:
 def apply(keys: list[torch.Tensor], values: list[torch.Tensor], spec: str | None):
     """Return compressed (keys, values) lists and a dict describing the message size."""
     L = len(keys)
-    keep_layers, keep_heads, bits, rank = set(range(L)), None, 16, None
+    keep_layers, keep_heads, bits, rank, fill = set(range(L)), None, 16, None, "zero"
     if spec:
         for op in spec.split(","):
             op = op.strip()
@@ -51,17 +53,22 @@ def apply(keys: list[torch.Tensor], values: list[torch.Tensor], spec: str | None
                 keep_heads = int(op[6:])
             elif op.startswith("rank="):
                 rank = int(op[5:])
+            elif op.startswith("fill="):
+                fill = op[5:]
             elif op in ("", "none"):
                 continue
             else:
                 raise ValueError(op)
     ks, vs = [], []
+    def blank(x):  # what an untransmitted layer/head carries
+        return x.mean(dim=2, keepdim=True).expand_as(x).contiguous() if fill == "mean" else torch.zeros_like(x)
     for j, (k, v) in enumerate(zip(keys, values)):
         if j not in keep_layers:
-            ks.append(torch.zeros_like(k)); vs.append(torch.zeros_like(v)); continue
+            ks.append(blank(k)); vs.append(blank(v)); continue
         if keep_heads is not None:
             m = torch.zeros(k.shape[1], device=k.device, dtype=k.dtype); m[:keep_heads] = 1
-            k, v = k * m[None, :, None, None], v * m[None, :, None, None]
+            mm = m[None, :, None, None]
+            k, v = k * mm + blank(k) * (1 - mm), v * mm + blank(v) * (1 - mm)
         if rank is not None:
             k, v = _low_rank(k, rank).to(k.dtype), _low_rank(v, rank).to(v.dtype)
         if bits < 16:
@@ -73,7 +80,9 @@ def apply(keys: list[torch.Tensor], values: list[torch.Tensor], spec: str | None
     heads = H if keep_heads is None else min(keep_heads, H)
     per_layer_elems = 2 * heads * (d if rank is None else (rank + rank * d / max(T, 1)))
     bytes_per_tok = len(keep_layers) * per_layer_elems * bits / 8
-    return ks, vs, {"spec": spec or "none", "layers": len(keep_layers), "heads": heads, "bits": bits, "rank": rank,
+    if fill == "mean":  # summaries for the rest: one vector per untransmitted (layer, head) for K and V
+        bytes_per_tok += ((L - len(keep_layers)) * H + len(keep_layers) * (H - heads)) * 2 * d * 2 / max(T, 1)
+    return ks, vs, {"spec": spec or "none", "layers": len(keep_layers), "heads": heads, "bits": bits, "rank": rank, "fill": fill,
                     "bytes_per_token": bytes_per_tok, "bytes_per_token_full": L * 2 * H * d * 2}
 
 

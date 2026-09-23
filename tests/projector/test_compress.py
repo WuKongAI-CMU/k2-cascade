@@ -25,3 +25,10 @@ def test_layers_heads_rank_quant():
     assert torch.linalg.matrix_rank(k3[0][0, 0]) == 1
     k4, _, _ = apply(k, v, "int4")
     assert (k4[0] - k[0]).abs().max() < 0.6
+
+
+def test_fill_mean_replaces_untransmitted_with_position_mean():
+    k, v = _kv()
+    k2, v2, info = apply(k, v, "layers=2-3,fill=mean")
+    assert torch.allclose(k2[0][0, 0, 0], k[0][0, 0].mean(0)) and torch.allclose(k2[0][0, 0, 3], k[0][0, 0].mean(0))
+    assert info["fill"] == "mean" and info["bytes_per_token"] > apply(k, v, "layers=2-3")[2]["bytes_per_token"]
