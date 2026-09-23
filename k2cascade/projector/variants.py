@@ -54,7 +54,7 @@ def ask_judge(client, context: str, question: str, answer: str, tries: int = 2) 
     for attempt in range(tries):
         try:
             r = _post_with_retry(client.client, "/chat/completions", json={
-                "model": client.model, "max_tokens": 300, "temperature": 0, "reasoning_effort": "low",
+                "model": client.model, "max_tokens": 300 if attempt == 0 else 1200, "temperature": 0, "reasoning_effort": "low",
                 "messages": [{"role": "system", "content": "Reply with a single JSON object and nothing else."},
                              {"role": "user", "content": q}]})
             body = r.json()
@@ -74,8 +74,9 @@ def ask_judge(client, context: str, question: str, answer: str, tries: int = 2) 
         return None
     if not d.get("counter_answer") or not d.get("sentence"):
         return None
-    if answer.lower() in d["sentence"].lower() or d["counter_answer"].lower() == answer.lower():
-        return None
+    if re.search(r"(?<!\w)" + re.escape(answer.lower()) + r"(?!\w)", d["sentence"].lower()) \
+            or d["counter_answer"].lower() == answer.lower():
+        return None  # the sentence must not restate the gold (whole-word match: "P" inside "NP" is fine)
     return {"counter_answer": d["counter_answer"].strip(), "sentence": d["sentence"].strip()}
 
 
@@ -115,7 +116,7 @@ def main(argv=None) -> None:
     from ..cloud import CloudK2
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=1000); ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="data/squad_variants.jsonl"); ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--out", default="data/squad_variants.jsonl"); ap.add_argument("--workers", type=int, default=2)
     a = ap.parse_args(argv)
     import os
     client = CloudK2()
