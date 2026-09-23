@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from concurrent.futures import ThreadPoolExecutor
 
 _SENT = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"'(])")
@@ -53,13 +54,16 @@ def ask_judge(client, context: str, question: str, answer: str, tries: int = 2) 
     d = None
     for attempt in range(tries):
         try:
-            r = _post_with_retry(client.client, "/chat/completions", json={
-                "model": client.model, "max_tokens": 300 if attempt == 0 else 1200, "temperature": 0, "reasoning_effort": "low",
+            r = _post_with_retry(client.client, "/chat/completions", attempts=3, timeout=90.0, json={
+                "model": client.model, "max_tokens": 1200, "temperature": 0, "reasoning_effort": "low",
                 "messages": [{"role": "system", "content": "Reply with a single JSON object and nothing else."},
                              {"role": "user", "content": q}]})
             body = r.json()
             txt = body["choices"][0]["message"]["content"] or ""
+            print(f"  attempt {attempt}: {r.status_code} finish={body['choices'][0].get('finish_reason')} "
+                  f"tokens={body.get('usage', {}).get('completion_tokens')} len={len(txt)}", file=sys.stderr, flush=True)
         except Exception as e:  # rate limit / server error bodies have no "choices"; back off and retry
+            print(f"  attempt {attempt}: {type(e).__name__} {str(e)[:120]} body={str(locals().get('body', ''))[:160]}", file=sys.stderr, flush=True)
             time.sleep(5 * (attempt + 1))
             continue
         blocks = re.findall(r"\{[^{}]*\}", txt, re.S)
@@ -91,10 +95,14 @@ def build_variants(context: str, answer_start: int, judged: dict) -> dict:
 def build(examples: list[dict], judge_fn, workers: int = 8) -> list[dict]:
     """examples need context, question, answers, answer_start. judge_fn(context, question, answer) -> dict|None."""
     def one(ex):
+        import sys, time
+        t = time.time()
         try:
             j = judge_fn(ex["context"], ex["question"], ex["answers"][0])
-        except Exception:
+        except Exception as e:
+            print(f"item {ex.get('id')}: error {type(e).__name__} after {time.time() - t:.0f}s", file=sys.stderr, flush=True)
             return None
+        print(f"item {ex.get('id')}: {'ok' if j else 'none'} {time.time() - t:.0f}s", file=sys.stderr, flush=True)
         if j is None:
             return None
         v = build_variants(ex["context"], ex["answer_start"], j)
@@ -127,12 +135,12 @@ def main(argv=None) -> None:
     todo = [e for e in ex if e["id"] not in done]
     written = len(done)
     with open(a.out, "a") as f:
-        for i in range(0, len(todo), 40):  # small chunks so progress lands on disk as it goes
-            rows = build(todo[i:i + 40], lambda c, q, ans: ask_judge(client, c, q, ans), a.workers)
+        for i in range(0, len(todo), 10):  # small chunks so progress lands on disk as it goes
+            rows = build(todo[i:i + 10], lambda c, q, ans: ask_judge(client, c, q, ans), a.workers)
             for r in rows:
                 f.write(json.dumps(r) + "\n")
             f.flush(); written += len(rows)
-            print(f"{written} written, {min(i + 40, len(todo))}/{len(todo)} attempted", flush=True)
+            print(f"{written} written, {min(i + 10, len(todo))}/{len(todo)} attempted", flush=True)
     print(f"{written}/{len(ex)} items with variants -> {a.out}")
 
 
