@@ -27,6 +27,27 @@ def _chunked_ce(lm_head: nn.Module, hidden: torch.Tensor, targets: torch.Tensor,
     return torch.cat(out)
 
 
+def _chunked_kl(lm_head: nn.Module, h_student: torch.Tensor, h_teacher: torch.Tensor, chunk: int) -> torch.Tensor:
+    """Per-token KL(teacher || student) (N,) between the receiver's next-token distributions from two hidden states."""
+    def piece(hs, ht):
+        ls = torch.log_softmax(lm_head(hs).float(), -1)
+        lt = torch.log_softmax(lm_head(ht).float(), -1)
+        return (lt.exp() * (lt - ls)).sum(-1)
+    out = []
+    for i in range(0, h_student.shape[0], chunk):
+        hs, ht = h_student[i:i + chunk], h_teacher[i:i + chunk].detach()
+        out.append(checkpoint(piece, hs, ht, use_reentrant=False) if torch.is_grad_enabled() else piece(hs, ht))
+    return torch.cat(out)
+
+
+def continuation_hidden(model: nn.Module, cont: torch.Tensor, cache=None, prefix_len: int = 0) -> torch.Tensor:
+    """Receiver's last hidden state on continuation positions (B, T-1, d), for distillation between caches."""
+    b, t = cont.shape
+    pos = torch.arange(prefix_len, prefix_len + t, device=cont.device)
+    return model.model(input_ids=cont, past_key_values=cache, position_ids=pos[None].expand(b, -1),
+                       cache_position=pos, use_cache=cache is not None).last_hidden_state[:, :-1]
+
+
 def continuation_loss(model: nn.Module, cont: torch.Tensor, cache=None, prefix_len: int = 0,
                       reduce: bool = True, chunk: int = 1024) -> torch.Tensor:
     """CE of cont[:, 1:] predicted from cont[:, :-1] with `cache` (a fresh DynamicCache holding

@@ -54,6 +54,7 @@ class TrainConfig:
     wandb: bool = False
     seed: int = 0
     derange_source: bool = False  # control: sender reads the previous micro-batch's prefix (no content to carry)
+    kl_text: float = 0.0  # weight of KL(text-path || cache-path) on the receiver's next-token distributions
 
 
 def parse_args(argv=None) -> TrainConfig:
@@ -163,7 +164,18 @@ def train(cfg: TrainConfig, src: nn.Module, tgt: nn.Module, proj: MLPProjector, 
             prev_prefix = prefix
             with torch.autocast(dev.type, dtype=torch.bfloat16, enabled=use_bf16):
                 cache = projected_cache(src, tgt, proj, prefix, grad=True, source_prefix=src_prefix)
-                loss = continuation_loss(tgt, cont, cache, cfg.prefix_len) / cfg.accum
+                if cfg.kl_text > 0:  # distil the receiver's own text-path distribution, not only the gold token
+                    from .eval import _chunked_kl, continuation_hidden, oracle_cache
+                    h_cache = continuation_hidden(tgt, cont, cache, cfg.prefix_len)
+                    with torch.no_grad():
+                        h_text = continuation_hidden(tgt, cont, oracle_cache(tgt, prefix), cfg.prefix_len)
+                    from .eval import _chunked_ce
+                    d = h_cache.shape[-1]
+                    ce = _chunked_ce(tgt.lm_head, h_cache.reshape(-1, d), cont[:, 1:].reshape(-1), 1024).mean()
+                    kl = _chunked_kl(tgt.lm_head, h_cache.reshape(-1, d), h_text.reshape(-1, d), 512).mean()
+                    loss = (ce + cfg.kl_text * kl) / cfg.accum
+                else:
+                    loss = continuation_loss(tgt, cont, cache, cfg.prefix_len) / cfg.accum
             loss.backward()
             total += loss.item()
         torch.nn.utils.clip_grad_norm_(params, 1.0)
