@@ -73,6 +73,12 @@ def load_models(cfg: TrainConfig, device):
     src = AutoModelForCausalLM.from_pretrained(cfg.source, **kw).to(device)
     tgt = AutoModelForCausalLM.from_pretrained(cfg.target, **kw).to(device)
     tok = AutoTokenizer.from_pretrained(cfg.target, trust_remote_code=True)
+    src_tok = AutoTokenizer.from_pretrained(cfg.source, trust_remote_code=True)
+    probe = "The quick brown fox, 1932."
+    if src_tok(probe, add_special_tokens=False)["input_ids"] != tok(probe, add_special_tokens=False)["input_ids"]:
+        from .align import attach_aligner  # different vocabularies: the sender reads its own tokens
+        attach_aligner(src, src_tok, tok)
+        print(f"cross-tokenizer sender: {cfg.source} aligned to {cfg.target} by character offsets")
     return src, tgt, tok
 
 

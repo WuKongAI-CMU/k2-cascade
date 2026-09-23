@@ -104,13 +104,25 @@ def capture_kv(model: nn.Module, with_hidden: bool = False):
             h.remove()
 
 
-def extract(model: nn.Module, input_ids: torch.Tensor, attention_mask: torch.Tensor | None = None,
-            with_hidden: bool = True) -> KVBundle:
-    """Run `model` on `input_ids` (B, T) and return pre-RoPE K/V for every layer and position, plus the
-    residual stream (embeddings and every layer output) if `with_hidden`."""
+def _extract(model: nn.Module, input_ids: torch.Tensor, attention_mask: torch.Tensor | None = None,
+             with_hidden: bool = True) -> KVBundle:
     with capture_kv(model, with_hidden) as store:
         model(input_ids=input_ids, attention_mask=attention_mask, use_cache=False)
     return KVBundle(keys=store["keys"], values=store["values"], hidden=store["hidden"])
+
+
+def extract(model: nn.Module, input_ids: torch.Tensor, attention_mask: torch.Tensor | None = None,
+            with_hidden: bool = True) -> KVBundle:
+    """Run `model` on `input_ids` (B, T) and return pre-RoPE K/V for every layer and position, plus the
+    residual stream (embeddings and every layer output) if `with_hidden`. A sender with a different tokenizer
+    (see align.attach_aligner) is run on its own tokens and gathered back to these positions."""
+    if getattr(model, "_k2_aligner", None) is not None:
+        from .align import extract_aligned
+        return extract_aligned(model, input_ids, with_hidden)
+    return _extract(model, input_ids, attention_mask, with_hidden)
+
+
+extract.__wrapped__ = _extract
 
 
 # ---- RoPE helpers (default rope_type; theta 1e7 for K2 Horizon) ----
