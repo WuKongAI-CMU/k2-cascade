@@ -1,0 +1,69 @@
+\begin{thebibliography}{10}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Cheng et~al.(2026)Cheng, Das, and Ramnath]{2608.04893}
+Cheng, J., Das, S., and Ramnath, R.
+\newblock When does latent communication pay? a causal audit of relayed {KV}
+  caches in multi-agent {LLM}s.
+\newblock \emph{arXiv preprint arXiv:2608.04893}, 2026.
+
+\bibitem[Fu et~al.(2025)Fu, Min, Zhang, Yan, Dai, Ouyang, and Wang]{2510.03215}
+Fu, T., Min, Z., Zhang, H., Yan, J., Dai, G., Ouyang, W., and Wang, Y.
+\newblock Cache-to-cache: Direct semantic communication between large language
+  models.
+\newblock \emph{arXiv preprint arXiv:2510.03215}, 2025.
+\newblock ICLR 2026.
+
+\bibitem[Gonuguntla(2026)]{2608.08239}
+Gonuguntla, A.
+\newblock The replay gap: Static evaluation of model switching in {LLM} agents
+  scores the wrong world.
+\newblock \emph{arXiv preprint arXiv:2608.08239}, 2026.
+
+\bibitem[Heo et~al.(2026)Heo, Shafipour, Zhao, Golub, Kamani, Borkar, Chandran,
+  Zardoshti, and Rouhani]{2608.03893}
+Heo, T., Shafipour, R., Zhao, R., Golub, M., Kamani, M.~M., Borkar, R.,
+  Chandran, M.~T., Zardoshti, P., and Rouhani, B.~D.
+\newblock Cross-model {KV} cache transfer in {LLM} families: A closed-form
+  linear mapping for prefill reuse.
+\newblock \emph{arXiv preprint arXiv:2608.03893}, 2026.
+
+\bibitem[Liu et~al.(2026)Liu, Zhang, Jia, Kan, and Wang]{2608.20617}
+Liu, J., Zhang, Q., Jia, Y., Kan, Z., and Wang, S.
+\newblock Dual-cache latent space communication between heterogeneous language
+  models.
+\newblock \emph{arXiv preprint arXiv:2608.20617}, 2026.
+
+\bibitem[Mou et~al.(2026)Mou, Wang, Li, He, and Wei]{2605.25421}
+Mou, X., Wang, S., Li, Z., He, Y., and Wei, Z.
+\newblock {HyLaT}: Efficient multi-agent communication via hybrid latent-text
+  protocol.
+\newblock \emph{arXiv preprint arXiv:2605.25421}, 2026.
+
+\bibitem[Qu et~al.(2026)Qu, Lu, Chen, Wang, and Lin]{2609.00891}
+Qu, X., Lu, S., Chen, Z., Wang, S., and Lin, T.
+\newblock {CacheBridge}: Efficient cross-model {KV} cache transfer.
+\newblock \emph{arXiv preprint arXiv:2609.00891}, 2026.
+
+\bibitem[Rossi et~al.(2026)Rossi, Raghunath, and Wu]{2605.22863}
+Rossi, M., Raghunath, P., and Wu, E.
+\newblock Latent cache flow: Model-to-model communication without text.
+\newblock \emph{arXiv preprint arXiv:2605.22863}, 2026.
+
+\bibitem[Shi et~al.(2026)Shi, Zhang, Bao, Nelson, and Ye]{2606.20662}
+Shi, K., Zhang, Z., Bao, H., Nelson, C., and Ye, Y.
+\newblock Confidence laundering in agent systems: Why uncertainty needs a
+  latent carrier.
+\newblock \emph{arXiv preprint arXiv:2606.20662}, 2026.
+
+\bibitem[Zhang \& Emu(2026)Zhang and Emu]{2607.26773}
+Zhang, H. and Emu, M.
+\newblock Do latent channels actually communicate? a causal audit of latent
+  multi-agent {LLM}.
+\newblock \emph{arXiv preprint arXiv:2607.26773}, 2026.
+
+\end{thebibliography}
