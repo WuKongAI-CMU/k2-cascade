@@ -1,6 +1,6 @@
 import torch
 
-from k2cascade.projector.qa import QAEncoder, prefix_cache, run, score_and_generate, f1, em
+from k2cascade.projector.qa import QAEncoder, prefix_cache, run, score_item, f1, em
 from tests.projector.test_noma import FakeTok, identity_projector
 
 
@@ -28,13 +28,20 @@ def test_self_equals_text_on_gold_logprob(target):
     nl = set(tok("\n", add_special_tokens=False)["input_ids"])
     ct, lt = prefix_cache("text", target, target, None, pa, pa)
     cs, ls = prefix_cache("self", target, target, None, pa, pa)
-    st, _ = score_and_generate(target, ct, lt, q, ans, enc.bos, 4, nl)
-    ss, _ = score_and_generate(target, cs, ls, q, ans, enc.bos, 4, nl)
-    assert abs(st - ss) < 1e-3
+    st = score_item(target, ct, lt, q, ans, enc.bos, 4, nl)
+    ss = score_item(target, cs, ls, q, ans, enc.bos, 4, nl)
+    assert abs(st["logp"] - ss["logp"]) < 1e-3 and abs(st["entropy"] - ss["entropy"]) < 1e-3
 
 
-def test_run_all_arms(source, target):
-    out = run(source, target, identity_projector(target), QATok(), EX, max_new=3)
-    for a in ("none", "text", "self", "raw", "project", "derange"):
-        assert out[a]["logp"] <= 0.0 and 0.0 <= out[a]["f1"] <= 1.0
-    assert "content_f1" in out and out["n"] == 3
+def test_run_all_arms_and_controls(source, target, tmp_path):
+    import io, json
+    buf = io.StringIO()
+    arms = ("none", "text", "self", "raw", "project", "derange", "zero", "random")
+    ex = [dict(e, counter_answer="south") for e in EX]
+    out = run(source, target, identity_projector(target), QATok(), ex, arms=arms, max_new=3, per_item=buf)
+    for a in arms:
+        assert out[a]["logp"] <= 0.0 and 0.0 <= out[a]["f1"] <= 1.0 and out[a]["entropy"] >= 0.0
+    assert out["text"]["jsd_text"] < 1e-6 and out["zero"]["jsd_text"] >= 0.0
+    assert "content_f1" in out and out["n"] == 3 and "p_counter" in out["project"]
+    rows = [json.loads(l) for l in buf.getvalue().splitlines()]
+    assert len(rows) == 3 and set(arms) <= set(rows[0])
