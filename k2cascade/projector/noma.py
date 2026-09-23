@@ -147,6 +147,9 @@ def run(src, tgt, projector, enc: Encoder, episodes: list[Episode], arms=ARMS, l
     dev = next(tgt.parameters()).device
     cid = torch.tensor(enc.colour_ids, device=dev)
     stats = {a: {"correct": 0, "logp": 0.0, "follow": 0} for a in arms}
+    from .extract import kv_geometry
+    if "raw" in arms and kv_geometry(src.config) != kv_geometry(tgt.config):
+        arms = tuple(a for a in arms if a != "raw")  # the untranslated cache cannot even be inserted
     for e in episodes:
         f = torch.tensor([enc.facts(e)], device=dev)
         pf = torch.tensor([enc.facts(episodes[e.partner])], device=dev)

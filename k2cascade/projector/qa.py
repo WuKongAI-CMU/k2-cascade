@@ -159,6 +159,9 @@ def run(src, tgt, projector, tok, examples: list[dict], arms=ARMS, max_new: int 
     enc = QAEncoder(tok, max_passage)
     nl = tok("\n", add_special_tokens=False)["input_ids"]
     newline_ids = set(nl) | ({tok.eos_token_id} if getattr(tok, "eos_token_id", None) is not None else set())
+    from .extract import kv_geometry
+    if "raw" in arms and kv_geometry(src.config) != kv_geometry(tgt.config):
+        arms = tuple(a for a in arms if a != "raw")  # the untranslated cache cannot even be inserted
     keys = ("logp", "logp_first", "p_gold", "p_counter", "entropy", "jsd_text", "em", "f1")
     stats = {a: {k: 0.0 for k in keys} for a in arms}
     counts = {a: {k: 0 for k in keys} for a in arms}
