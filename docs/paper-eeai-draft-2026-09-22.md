@@ -108,6 +108,34 @@ On F1 the trained projector recovers 96% of the gap between question-only and re
 log-probability it recovers 69%. The wrong passage's cache (derange), the ridge map, and the content-free
 projector all sit at or below question-only. The channel carries the passage, not a bias toward answering.
 
+**Does the cache carry how sure the sender was? (Table 2c).** Following the knowledge-conflict and
+semantic-entropy protocols (Longpre et al. 2021; Xie et al. 2023; Farquhar et al. 2024), each SQuAD item gets
+three passages: *clean*, *contradicted* (one fluent sentence asserting a counter-answer, written by the 375B
+judge and kept only if DeBERTa-MNLI says it entails the counter-answer and not the gold: 587 of 941 survive),
+and *removed* (the gold sentence deleted). We keep the 377 items the receiver answers correctly from clean text.
+The sender's uncertainty is its semantic entropy over 10 sampled answers (mean 1.10 / 1.23 / 1.96 across the
+three variants, so the sender does notice). The receiver's uncertainty is its entropy at the first answer token.
+
+| receiver sees | P(gold) clean / contra. / removed | entropy clean / removed | AUROC vs sender SE, clean / contra. / removed | drop ratio |
+|---|---|---|---|---|
+| text | .437 / .290 / .162 | 1.14 / 3.03 | .597 / .615 / .671 | 1 (def.) |
+| **mapped cache** | .279 / .249 / .130 | 1.78 / 3.16 | **.585 / .605 / .624** | **.54** |
+| deranged cache | .105 / .106 / .105 | 3.88 / 3.88 | .536 / .488 / .564 | 0 |
+| zero cache | .034 / .033 / .037 | 6.41 / 6.18 | .496 / .481 / .502 | 0 |
+| moment-matched random | .005 / .004 / .005 | 7.24 / 7.30 | .457 / .472 / .580 | 0 |
+| question only | .127 | 3.69 | .532 / .479 / .603 | 0 |
+
+Three readings. (i) The receiver's confidence through the cache tracks the *sender's* semantic entropy about as
+well as it does when the receiver reads the text itself (AUROC .585 vs .597 on clean; every content-free control
+sits at .46–.54), and the absolute level is bounded by the text path, not by the channel. (ii) When the answer is
+removed, the cache path loses 54% of the confidence the text path loses and its entropy rises by 73% of the
+text path's rise: uncertainty crosses, attenuated — the compression of predictive variance that distillation work
+(2601.18909) predicts for any learned map. (iii) Under a contradiction the text path is swayed slightly more by
+the inserted sentence than by the original (P(counter) .32 > P(gold) .29), while the cache path keeps the original
+ahead (.25 > .22) and its F1 is higher (49.0 vs 45.2). Across all conditions the cache path is less confident than
+the text path on clean passages (P(gold) .28 vs .44), so a receiver that treats the two channels as equivalent
+would under-trust the cache; per-channel calibration is the obvious fix.
+
 **Continuation retention is the wrong headline (Table 3).** Following the closed-form-map literature we also
 report retention = (loss_none − loss_project)/(loss_none − loss_oracle) on 128 fresh held-out sequences.
 
