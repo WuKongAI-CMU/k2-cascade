@@ -123,7 +123,16 @@ shrink it for free and two do not. int8 and int4 fake-quantisation of the mapped
 parameters and keeps SQuAD F1 (53.7) while losing 9 points on the binding test (64.3%) [bottleneck 16 pending].
 Dropping layers or heads with zeros in their place collapses transfer (layers 18–35 only: 24.3%; 4 heads: 25.7%),
 unlike the layer-band experiment where the other layers carried a *plausible* cache; an all-zero layer makes the
-receiver attend uniformly to nothing and drowns the question [mean-vector fill pending]. Low-rank truncation of
+receiver attend uniformly to nothing and drowns the question. Filling untransmitted layers with a one-vector
+summary (the position-mean of that layer's mapped cache) recovers only part of it (layers 18–35: 33.7%; layers
+12–35: 35.0%; SQuAD F1 21–29), so with this projector the message cannot be cut by layers: every receiver layer
+wants its own cache.
+
+**Different contexts (Table 2f).** HotpotQA bridge questions, sender and receiver each holding one of the two
+supporting paragraphs (the LCF-X setting): the receiver with its own paragraph and the question reaches F1 30.1;
+with both paragraphs as text 45.8; with its own paragraph plus the sender's mapped cache **37.9** — half of the
+gap — while the deranged cache gives 29.9 (no help), the ridge map 26.3 and a zero cache 20.9. The channel
+carries the *other* paragraph, and only the trained map does. Low-rank truncation of
 each (positions × head-dim) matrix keeps the binding test (rank 32/16: 75.0%) but not passages (F1 45.3 / 29.6).
 Latency on one A100: the receiver re-reading 512 tokens takes 48 ms, the projector 24 ms (2.0×; the sender's own
 read, 45 ms, is already paid). The message is therefore cheap in time and expensive in bytes; the honest framing
