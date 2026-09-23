@@ -84,7 +84,7 @@ def evaluate(src_model: nn.Module, tgt_model: nn.Module, projector: nn.Module, b
         sums["oracle"] += continuation_loss(tgt_model, cont, oracle_cache(tgt_model, prefix), prefix_len).item()
         sums["project"] += continuation_loss(
             tgt_model, cont, projected_cache(src_model, tgt_model, projector, prefix), prefix_len).item()
-        if with_source_oracle:
+        if with_source_oracle and getattr(src_model, "_k2_aligner", None) is None:  # needs the receiver's ids to be the sender's
             sums["source_oracle"] = sums.get("source_oracle", 0.0) + continuation_loss(
                 src_model, cont, oracle_cache(src_model, prefix), prefix_len).item()
         if with_derange and len(batches) > 1:  # sender read a different text: what the map gives without content
