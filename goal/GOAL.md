@@ -27,8 +27,10 @@ attenuated; cache beats a verbal confidence word; two training fixes tried, seco
    the same price. Pilot only; the design doc precedes any run.
 
 ## Week (rolling; rewritten every Monday)
-Week of 2026-09-22: all twelve experiment blocks run; paper v2 compiled; overnight: entropy-matched projector,
-numeric verbal baseline, seeds for Qwen and HotpotQA.
+Week of 2026-09-22: all twelve experiment blocks run; paper v2 compiled (abstract tightened); overnight:
+entropy-matched projector, numeric verbal baseline, seeds for Qwen and HotpotQA; milestone-4 code written
+(cascade.py, policy.py) and its first run launched (600 SQuAD items, probe vs thresholds, state vs text vs
+verbal handoff, cost in measured latency).
 Week of 2026-09-29: read-through and rewrite of abstract/intro/limitations; arXiv v1; start milestone 4 code;
 one-page design note for the priced-handoff pilot (ties to docs/agent-communication-futures-2026-09-21.md).
 
