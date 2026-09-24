@@ -154,6 +154,14 @@ three variants, so the sender does notice). The receiver's uncertainty is its en
 | zero cache | .034 / .033 / .037 | 6.41 / 6.18 | .496 / .481 / .502 | 0 |
 | moment-matched random | .005 / .004 / .005 | 7.24 / 7.30 | .457 / .472 / .580 | 0 |
 | question only | .127 | 3.69 | .532 / .479 / .603 | 0 |
+| **text handoff with the sender's answer + confidence word** | .253 / .193 / .171 | 2.84 / 2.77 | .552 / .542 / .592 | .30 |
+
+The last row is the text channel doing its best to carry uncertainty: the sender writes its greedy answer and
+"confidence: high / medium / low" (terciles of its own semantic entropy), and the receiver reads only that. The
+mapped cache beats it on every measure: it tracks the sender's uncertainty better (AUROC +.03 to +.06, on all
+three variants), it loses 54% of the confidence the text path loses on unanswerable passages where the verbal
+handoff loses 30%, and it answers better on clean and contradicted passages (F1 59.8 / 49.0 vs 55.0 / 37.7). A
+one-word confidence is a log 3 nat channel; the cache is not so limited, and the receiver uses the difference.
 
 Three readings. (i) The receiver's confidence through the cache tracks the *sender's* semantic entropy about as
 well as it does when the receiver reads the text itself (AUROC .585 vs .597 on clean; every content-free control
