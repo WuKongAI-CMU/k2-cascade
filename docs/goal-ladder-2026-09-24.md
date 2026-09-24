@@ -2,11 +2,14 @@
 
 The ladder has four rungs. Each rung is judged only by the rung below it; the top rung is never "done".
 
-## North star (decade)
-Systems of models that improve themselves: they know what they cannot do, hand their *state* to something
-stronger, and learn from what comes back. Communication of state and calibrated self-knowledge are the two
-ingredients we are betting on; we do not claim they are sufficient for recursive self-improvement, only
-that nobody has them yet and both are testable at our scale.
+## North star (decade): the agent economy runs on state, not text
+Populations of models that trade work with each other and improve from it: an agent knows what it cannot do,
+hands its *state* (not a transcript) to a stronger or more specialised one, pays for it, and learns from what
+comes back. Three things such an economy needs that nobody has: a channel for state between different models
+(what we built), a way to carry how sure the sender was so the buyer is not defrauded by confident-looking
+handoffs (what we are measuring; "confidence laundering" is the fraud), and a price — bytes, latency, accuracy
+per dollar — so the trade clears. We do not claim these are sufficient for self-improving systems; we claim they
+are necessary and testable at our scale, and that the papers come out of the same experiments.
 
 ## 12-month line (to 2027-09): state channels that carry uncertainty
 Already set in docs/goal-2026-09-21.md; status 2026-09-24: milestone 1 done (channel exists, 4 pairs, controls),
@@ -19,13 +22,15 @@ attenuated; cache beats a verbal confidence word; two training fixes tried, seco
 2. Milestone 3 closed: a projector that keeps ≥ 80% of the sender's confidence drop, or a proof that the
    receiver-side objective cannot (then the fix moves to the sender).
 3. Milestone 4 started: probe + channel cascade on one real task, three baselines, accuracy per dollar.
-4. One thing that feeds the north star directly: a receiver that is *worse* at a task learns from the sender's
-   cache without gradient steps (in-context transfer of skill, not fact). Pilot only.
+4. One thing that feeds the north star directly: state as a tradable good. Price a handoff (bytes × latency ×
+   accuracy gained) and show a two-agent market where buying the small agent's state beats buying its text at
+   the same price. Pilot only; the design doc precedes any run.
 
 ## Week (rolling; rewritten every Monday)
 Week of 2026-09-22: all twelve experiment blocks run; paper v2 compiled; overnight: entropy-matched projector,
 numeric verbal baseline, seeds for Qwen and HotpotQA.
-Week of 2026-09-29: read-through and rewrite of abstract/intro/limitations; arXiv v1; start milestone 4 code.
+Week of 2026-09-29: read-through and rewrite of abstract/intro/limitations; arXiv v1; start milestone 4 code;
+one-page design note for the priced-handoff pilot (ties to docs/agent-communication-futures-2026-09-21.md).
 
 ## Review protocol
 - Weekly (Monday): rewrite the Week rung; move anything finished up into Quarter status; note what was killed.
