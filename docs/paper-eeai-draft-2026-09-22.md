@@ -154,7 +154,7 @@ three variants, so the sender does notice). The receiver's uncertainty is its en
 | zero cache | .034 / .033 / .037 | 6.41 / 6.18 | .496 / .481 / .502 | 0 |
 | moment-matched random | .005 / .004 / .005 | 7.24 / 7.30 | .457 / .472 / .580 | 0 |
 | question only | .127 | 3.69 | .532 / .479 / .603 | 0 |
-| **text handoff with the sender's answer + confidence word** | .253 / .193 / .171 | 2.84 / 2.77 | .552 / .542 / .592 | .30 |
+| **text handoff with the sender's answer + confidence word** | .253 / .193 / .171 | 2.88 / 2.80 | .552 / .542 / .592 | .30 |
 
 The last row is the text channel doing its best to carry uncertainty: the sender writes its greedy answer and
 "confidence: high / medium / low" (terciles of its own semantic entropy), and the receiver reads only that. The
