@@ -55,6 +55,7 @@ class TrainConfig:
     seed: int = 0
     derange_source: bool = False  # control: sender reads the previous micro-batch's prefix (no content to carry)
     kl_text: float = 0.0  # weight of KL(text-path || cache-path) on the receiver's next-token distributions
+    ent_match: float = 0.0  # weight of (H_receiver_via_cache - H_sender_own)^2 per token: carry the sender's spread
 
 
 def parse_args(argv=None) -> TrainConfig:
@@ -164,7 +165,17 @@ def train(cfg: TrainConfig, src: nn.Module, tgt: nn.Module, proj: MLPProjector, 
             prev_prefix = prefix
             with torch.autocast(dev.type, dtype=torch.bfloat16, enabled=use_bf16):
                 cache = projected_cache(src, tgt, proj, prefix, grad=True, source_prefix=src_prefix)
-                if cfg.kl_text > 0:  # distil the receiver's own text-path distribution, not only the gold token
+                if cfg.ent_match > 0:  # match the receiver's per-token entropy through the cache to the sender's own
+                    from .eval import _chunked_ce, _chunked_entropy, continuation_hidden, oracle_cache
+                    h_cache = continuation_hidden(tgt, cont, cache, cfg.prefix_len)
+                    d = h_cache.shape[-1]
+                    with torch.no_grad():
+                        h_src = continuation_hidden(src, cont, oracle_cache(src, prefix), cfg.prefix_len)
+                        ent_src = _chunked_entropy(src.lm_head, h_src.reshape(-1, h_src.shape[-1]), 512)
+                    ce = _chunked_ce(tgt.lm_head, h_cache.reshape(-1, d), cont[:, 1:].reshape(-1), 1024).mean()
+                    ent = _chunked_entropy(tgt.lm_head, h_cache.reshape(-1, d), 512)
+                    loss = (ce + cfg.ent_match * ((ent - ent_src) ** 2).mean()) / cfg.accum
+                elif cfg.kl_text > 0:  # distil the receiver's own text-path distribution, not only the gold token
                     from .eval import _chunked_kl, continuation_hidden, oracle_cache
                     h_cache = continuation_hidden(tgt, cont, cache, cfg.prefix_len)
                     with torch.no_grad():

@@ -40,6 +40,18 @@ def _chunked_kl(lm_head: nn.Module, h_student: torch.Tensor, h_teacher: torch.Te
     return torch.cat(out)
 
 
+def _chunked_entropy(lm_head: nn.Module, hidden: torch.Tensor, chunk: int) -> torch.Tensor:
+    """Per-token entropy (N,) of the next-token distribution from hidden states."""
+    def piece(h):
+        lp = torch.log_softmax(lm_head(h).float(), -1)
+        return -(lp.exp() * lp).sum(-1)
+    out = []
+    for i in range(0, hidden.shape[0], chunk):
+        h = hidden[i:i + chunk]
+        out.append(checkpoint(piece, h, use_reentrant=False) if torch.is_grad_enabled() else piece(h))
+    return torch.cat(out)
+
+
 def continuation_hidden(model: nn.Module, cont: torch.Tensor, cache=None, prefix_len: int = 0) -> torch.Tensor:
     """Receiver's last hidden state on continuation positions (B, T-1, d), for distillation between caches."""
     b, t = cont.shape
