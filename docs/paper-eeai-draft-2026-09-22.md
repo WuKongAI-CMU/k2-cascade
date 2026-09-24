@@ -111,8 +111,9 @@ projector all sit at or below question-only. The channel carries the passage, no
 **Across families (Table 2d).** With Qwen3-4B as the sender (36 layers, 8 KV heads, head dim 128 — matched
 KV geometry — but a different vocabulary and pre-training), receiver positions are aligned to sender tokens by
 character offsets and the same recipe is run: top-3 ridge 18.0% (raw injection 15.7%, deranged 13.0%), trained
-projector **76.7%** on the 6-name binding test (deranged 1.3%, follow rate 80%), SQuAD F1 48.0 against 54.7 for
-the receiver reading the text. Cross-family transfer is as strong as within-family on the binding test and
+projector **76.7 / 70.3 / 68.0%** over three training seeds (mean 71.7, sd 4.5) on the 6-name binding test
+(deranged ≤ 4.7%, follow rate 80% for seed 0), SQuAD F1 48.0 / 51.9 / 44.9 (mean 48.3) against 54.7 for the
+receiver reading the text. Cross-family transfer is as strong as within-family on the binding test and
 within 7 F1 of it on passages, and the linear map alone does nothing across families. [K2-0.9B, a same-family
 sender with a different vocabulary and head dimension 64, pending.]
 
@@ -130,8 +131,9 @@ wants its own cache.
 
 **Different contexts (Table 2f).** HotpotQA bridge questions, sender and receiver each holding one of the two
 supporting paragraphs (the LCF-X setting): the receiver with its own paragraph and the question reaches F1 30.1;
-with both paragraphs as text 45.8; with its own paragraph plus the sender's mapped cache **37.9** — half of the
-gap — while the deranged cache gives 29.9 (no help), the ridge map 26.3 and a zero cache 20.9. The channel
+with both paragraphs as text 45.8; with its own paragraph plus the sender's mapped cache **37.9 / 39.7 / 42.1**
+over the three training seeds (mean 39.9, sd 2.1) — 63% of the gap — while the deranged cache gives 29.9–32.1
+(no help), the ridge map 26.3 and a zero cache 20.9. The channel
 carries the *other* paragraph, and only the trained map does. Low-rank truncation of
 each (positions × head-dim) matrix keeps the binding test (rank 32/16: 75.0%) but not passages (F1 45.3 / 29.6).
 Latency on one A100: the receiver re-reading 512 tokens takes 48 ms, the projector 24 ms (2.0×; the sender's own
@@ -155,6 +157,7 @@ three variants, so the sender does notice). The receiver's uncertainty is its en
 | moment-matched random | .005 / .004 / .005 | 7.24 / 7.30 | .457 / .472 / .580 | 0 |
 | question only | .127 | 3.69 | .532 / .479 / .603 | 0 |
 | **text handoff with the sender's answer + confidence word** | .253 / .193 / .171 | 2.88 / 2.80 | .552 / .542 / .592 | .30 |
+| text handoff with the sender's answer + a numeric confidence (sample agreement, e.g. "0.8") | — | — | .548 / .532 / .563 | .32 |
 
 The last row is the text channel doing its best to carry uncertainty: the sender writes its greedy answer and
 "confidence: high / medium / low" (terciles of its own semantic entropy), and the receiver reads only that. The
@@ -178,8 +181,14 @@ A first attempt to train the loss away did not work: adding KL(text-path ‖ cac
 next-token distributions to the projector's objective (weight 1, 1000 steps) raises the cache path's entropy
 everywhere (clean 2.38 vs 1.78) without making it track the sender better (AUROC .590 / .589 / .611; drop ratio
 .56 vs .54) and costs 2 F1. Matching the receiver's own text-path distribution is the wrong target: what is lost
-is the *sender's* spread, which the receiver's text path does not contain either. A sender-side target (matching
-the receiver's cache-path entropy to the sender's semantic entropy) is the next experiment, not this paper's.
+is the *sender's* spread, which the receiver's text path does not contain either. A sender-side target — matching
+the receiver's per-token entropy through the cache to the sender's own per-token entropy on the training text —
+was the second attempt (weight 1, 1000 steps): binding accuracy holds (72.3%), SQuAD F1 falls to 45.3, and the
+uncertainty measures do not move (AUROC .596 / .587 / .627; drop ratio .51). Neither receiver-side objective
+recovers the sender's spread; what is compressed is compressed by the map's capacity or by how the receiver
+reads a foreign cache, and separating those two is the next paper's first experiment. Writing the sender's
+confidence as a number instead of a word does not help the text channel either (AUROC .548 / .532 / .563,
+drop ratio .32).
 
 **When should the small model hand off? (Table 2g).** On 600 SQuAD items the 3.7B alone reaches F1 52.2 and
 gets 35.5% of items wrong (F1 < 0.5). A logistic probe on its pre-action hidden state (last prompt token,
