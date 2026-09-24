@@ -475,6 +475,41 @@ def fig_cost() -> None:
     save(fig, "fig_cost")
 
 
+# --------------------------------------------------------------------------- (i)
+def fig_policy() -> None:
+    """F1 against latency (ms per item) as the handoff rate goes from 0 to 1,
+    for the three handoff arms under the probe trigger (solid) and the oracle
+    trigger (dashed).  Data: analysis/cloud/cascade/curves.json."""
+    with open(DATA / "cascade" / "curves.json") as f:
+        J = json.load(f)
+    arms = [
+        ("text", "text handoff", C["black"], "o"),
+        ("project", "mapped cache", C["blue"], "s"),
+        ("verbal", "answer + confidence word", C["green"], "D"),
+    ]
+    fig, ax = plt.subplots(figsize=(SINGLE, 2.3))
+    for key, label, col, mk in arms:
+        for trig, ls, lw in (("probe", "-", 1.2), ("oracle", "--", 0.9)):
+            pts = J["curves"][f"{key}/{trig}"]
+            xs = [1000 * p["cost"] for p in pts]
+            ys = [p["f1"] for p in pts]
+            ax.plot(xs, ys, ls=ls, lw=lw, color=col, marker=mk if trig == "probe" else None,
+                    ms=3, label=label if trig == "probe" else None)
+    sender = J["sender_f1"]
+    ax.axhline(sender, ls=":", lw=0.8, color=C["grey"], zorder=0)
+    edge_label(ax, sender, "sender\nalone", C["grey"])
+    ax.set_xlabel("latency, ms per item (A100)")
+    ax.set_ylabel("SQuAD token-F1")
+    ax.set_ylim(0.44, 0.60)
+    h, l = ax.get_legend_handles_labels()
+    h += [plt.Line2D([], [], color=C["grey"], ls="-", lw=1.2),
+          plt.Line2D([], [], color=C["grey"], ls="--", lw=0.9)]
+    l += ["probe trigger", "oracle trigger"]
+    ax.legend(h, l, loc="lower right", frameon=False, handlelength=1.6, fontsize=6.3, ncol=2,
+              columnspacing=0.8)
+    save(fig, "fig_policy")
+
+
 if __name__ == "__main__":
     fig_arms()
     fig_layers()
@@ -484,3 +519,4 @@ if __name__ == "__main__":
     fig_confidence()
     fig_pairs()
     fig_cost()
+    fig_policy()
