@@ -30,7 +30,9 @@ attenuated; cache beats a verbal confidence word; two training fixes tried, seco
 Week of 2026-09-22: all twelve experiment blocks run; paper v2 compiled (abstract tightened); overnight:
 entropy-matched projector, numeric verbal baseline, seeds for Qwen and HotpotQA; milestone-4 code written
 (cascade.py, policy.py) and its first run launched (600 SQuAD items, probe vs thresholds, state vs text vs
-verbal handoff, cost in measured latency).
+verbal handoff, cost in measured latency). 09-24 morning: all overnight results in (two receiver-side fixes for
+the uncertainty loss failed; numeric verbal baseline still loses to the cache; Qwen 3 seeds 71.7±4.5; HotpotQA
+3 seeds 39.9±2.1); milestone 4 killed on SQuAD (receiver only 3.5 F1 better); paper v3 being compiled.
 Week of 2026-09-29: read-through and rewrite of abstract/intro/limitations; arXiv v1; start milestone 4 code;
 one-page design note for the priced-handoff pilot (ties to docs/agent-communication-futures-2026-09-21.md).
 
