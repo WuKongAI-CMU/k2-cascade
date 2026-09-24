@@ -1,6 +1,7 @@
 %%%%%%%% ICML 2026 submission: Cross-Size KV Handoff %%%%%%%%
-% Text converted from docs/paper-eeai-draft-2026-09-22.md; numbers from
-% analysis/cloud/summary.md. Figures: docs/paper/make_figs.py.
+% Text and numbers from docs/paper-eeai-draft-2026-09-22.md (Tables 2b-2f and
+% the confidence section), docs/theory-note-2026-09-23.md (theory box) and
+% analysis/cloud/**/*.json. Figures: docs/paper/make_figs.py.
 % Build: latexmk -pdf main.tex   (from docs/paper/)
 
 \documentclass{article}
@@ -21,15 +22,16 @@
 \usepackage{mathtools}
 \usepackage[capitalize,noabbrev]{cleveref}
 \usepackage{multirow}
+\usepackage[most]{tcolorbox}
 
 \graphicspath{{figs/}}
 
-\icmltitlerunning{Cross-Size KV Handoff}
+\icmltitlerunning{Cross-Size KV Handoff Carries the Sender's Uncertainty}
 
 \begin{document}
 
 \twocolumn[
-  \icmltitle{Cross-Size KV Handoff: A Small Model's Cache \\ Can Be Read by a Larger One}
+  \icmltitle{Text Handoff Launders Uncertainty; \\ A Mapped KV Cache Keeps More of It}
 
   % Anonymous author block (double-blind submission).
   \icmlsetsymbol{equal}{*}
@@ -38,7 +40,7 @@
   \end{icmlauthorlist}
   \icmlaffiliation{anon}{Anonymous Institution, Anonymous City, Anonymous Country}
   \icmlcorrespondingauthor{Anonymous Author}{anon.email@domain.com}
-  \icmlkeywords{KV cache, latent communication, model handoff, multi-agent LLM}
+  \icmlkeywords{KV cache, latent communication, model handoff, uncertainty, multi-agent LLM}
 
   \vskip 0.3in
 ]
@@ -46,32 +48,35 @@
 \printAffiliationsAndNotice{}
 
 \begin{abstract}
-Agents built from several language models hand work to each other through text, which drops everything the sender computed while reading. We ask whether a smaller model's key--value (KV) cache can be handed directly to a larger model of the same family. Between K2-Horizon-3.7B and K2-Horizon-7B, a per-head linear map fit in closed form recovers almost nothing (22\% on a binding test, chance 12.5\%), but a gated residual on top of it, trained for 1,500 steps on the larger model's continuation loss with both models frozen, lets the 7B answer 63--73\% of questions about facts only the 3.7B read. Three controls separate content from compute: a cache from the wrong episode drops accuracy to 5\% and the 7B follows the wrong cache 64\% of the time; a projector trained with a deranged sender learns a soft prompt that recovers 77\% of the continuation-loss gap yet answers at 23\%; and injecting the cache into only the first half of the receiver's layers gives chance, while the second half alone gives 52\%. Transfer does not degrade when the fact is 512 tokens away from the question and holds across three attribute types. We release the maps and the test.
+When one language model hands work to another through text, the receiver gets the sender's answer but not how sure the sender was: a text handoff is a point estimate, and the receiver treats it as a fact. We ask whether handing over the sender's key--value (KV) cache instead keeps that uncertainty. Between two frozen models of different size, K2-Horizon-3.7B and K2-Horizon-7B, we train a per-head map from the small model's cache to the large model's, and test on SQuAD passages that are clean, contradicted, or have their answer removed. The receiver's confidence through the mapped cache tracks the \emph{sender's} semantic entropy about as well as when the receiver reads the text itself (AUROC .585 / .605 / .624 vs .597 / .615 / .671), and better than a text handoff in which the sender adds its answer and a confidence word (.552 / .542 / .592); when the answer is removed, the cache path loses 54\% of the confidence the text path loses where the verbal handoff loses 30\%, and it answers better on clean and contradicted passages (F1 59.8 / 49.0 vs 55.0 / 37.7). The precondition is that the cache carries content at all, which we establish with controls: a closed-form linear map recovers almost nothing on a binding test (22\%, chance 12.5\%), a gated residual trained on the receiver's continuation loss reaches 63--73\%, the receiver follows a cache from the wrong episode 64\% of the time, a projector trained with a deranged sender answers at 23\%, and on SQuAD the mapped cache reaches 53.0 F1 against 54.7 for reading the passage. The same recipe crosses model families (Qwen3-4B $\rightarrow$ 7B: 76.7\%) and fails for a same-family sender with a different vocabulary and head dimension (K2-0.9B: 17\%). A first attempt to train the confidence loss away with a KL term did not work; we say why. We release the maps and the tests.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 
-Edge--cloud agent stacks run a small model on device and escalate to a large one when the small model is unsure. Escalation today means re-sending the transcript: the large model re-reads everything and the small model's work is discarded. If the large model could instead continue from the small model's internal state, the handoff would carry what the small model had already computed---including, in the longer run, how sure it was.
+Edge--cloud agent stacks run a small model on device and escalate to a large one when the small model is unsure. Escalation today means writing a message: the small model's answer, perhaps with a confidence word, and the large model reads it and continues. The message is a point estimate. Two senders with the same best guess and very different spread send the same words, so whatever the small model knew about its own uncertainty is discarded at the boundary, and the receiver treats a confident-looking guess as a fact---the ``confidence laundering'' that \citet{2606.20662} describe. If the large model could instead continue from the small model's internal state, the handoff would carry what the small model had computed, including its spread. This paper measures how much of the sender's uncertainty survives each kind of handoff, and finds that a mapped KV cache keeps more of it than text with a confidence word.
 
-This paper asks the narrowest version of that question. Given two frozen models of different size that share a tokenizer and KV geometry (K2-Horizon-3.7B and 7B: 36 layers, 8 KV heads, head dimension 128), can a learned map from the small model's cache to the large model's cache carry a \emph{specific fact} that only the small model saw? We call this binding transfer, and we test it with a control for the standard objection that ``latent gains'' are extra compute rather than communication.
+Before uncertainty can cross, content must. Given two frozen models of different size that share a tokenizer and KV geometry (K2-Horizon-3.7B and 7B: 36 layers, 8 KV heads, head dimension 128), can a learned map from the small model's cache to the large model's cache carry a \emph{specific fact} that only the small model saw? We call this binding transfer, and we test it with a control for the standard objection that ``latent gains'' are extra compute rather than communication. The content results are the foundation; the uncertainty result is what the foundation is for.
 
 \textbf{Contributions.}
-(1) A binding-transfer test (Noma) with six arms that isolates content from shape and compute.
-(2) A two-stage projector---closed-form ridge over correlation-selected source layers, plus a gated residual trained on the receiver's continuation loss---that reaches 63--73\% binding transfer where the ridge alone reaches 22\%.
-(3) Three controls that bound what the receiver actually gets from the cache: a deranged-episode cache, a deranged-sender projector, and layer-band injection.
+(1) A sender-uncertainty test on SQuAD with clean, contradicted and answer-removed passages, and the finding that a mapped-cache handoff tracks the sender's semantic entropy better than a text handoff with a confidence word and loses less confidence when the answer is gone (\cref{sec:uncertainty}), with a short argument for why a text handoff cannot do better (the theory box).
+(2) A binding-transfer test (Noma) with six arms that isolates content from shape and compute, and a two-stage projector---closed-form ridge over correlation-selected source layers plus a gated residual trained on the receiver's continuation loss---that reaches 63--73\% binding transfer where the ridge alone reaches 22\% (\cref{sec:content}).
+(3) Controls that bound what the receiver actually gets from the cache: a deranged-episode cache, a deranged-sender projector, layer-band injection, and the demonstration that continuation retention, the usual headline, cannot tell a channel from a prompt (\cref{sec:controls}).
+(4) Cross-family, cross-context and message-cost results that say where the channel works and what it costs.
 
 \section{Setup}
 \label{sec:setup}
 
 \textbf{Models.} Sender K2-Horizon-3.7B, receiver K2-Horizon-7B, both frozen, bf16, RoPE $\theta = 10^{7}$. We capture the sender's pre-RoPE K and raw V at every layer, map them, apply RoPE at the receiver, and insert the result as the receiver's cache for the prefix positions. The receiver then reads only the question.
 
-\textbf{Projector.} Stage 1: for each receiver layer $\ell$ and KV head $h$, a ridge regression from the concatenated $[K;V]$ of the sender (256-d per head) to the receiver's $[K;V]$; source layers are the three sender layers whose K/V correlate best with receiver layer $\ell$ (``top-3''), which beat the aligned-layer map in a first pass. Stage 2: a gated SwiGLU residual (bottleneck 128, ${\sim}150$M parameters) on top of the ridge output, trained with AdamW for 1,500 steps, effective batch 16 sequences of 1,024 FineWeb-Edu tokens, prefix 512, on the receiver's cross-entropy over the continuation. Nothing in training mentions the test.
+\textbf{Projector.} Stage 1: for each receiver layer $\ell$ and KV head $h$, a ridge regression from the concatenated $[K;V]$ of the sender (256-d per head) to the receiver's $[K;V]$; source layers are the three sender layers whose K/V correlate best with receiver layer $\ell$ (``top-3''), which beat the aligned-layer map in a first pass. Stage 2: a gated SwiGLU residual (bottleneck 128, 151\,M parameters) on top of the ridge output, trained with AdamW for 1,500 steps, effective batch 16 sequences of 1,024 FineWeb-Edu tokens, prefix 512, on the receiver's cross-entropy over the continuation. Nothing in training mentions the tests.
 
 \textbf{Noma binding test.} Each episode assigns one of eight single-token values to eight nonce names (``Noma is amber. Vela is indigo.\ \ldots''). Only the sender reads the facts. The receiver is asked ``What colour is Vela?'' and we score the eight values. Arms: \emph{none} (question only), \emph{text} (receiver reads the facts itself), \emph{self} (receiver's own cache re-injected; equals \emph{text} to $10^{-4}$), \emph{raw} (sender cache injected without a map), \emph{project} (mapped cache), \emph{derange} (mapped cache from another episode with the same layout but a different value for the queried name). Content transfer $=$ project $-$ derange. For \emph{derange} we also report the follow rate: how often the answer is the \emph{other} episode's value.
 
-\section{Results}
-\label{sec:results}
+\textbf{Passages.} SQuAD v1.1 validation: the sender reads the passage ($\le 512$ tokens), the receiver reads only the question and answers greedily ($\le 8$ tokens, stopped at newline); token-F1 against the gold spans. The uncertainty protocol built on it is given in \cref{sec:uncertainty}.
+
+\section{Content Transfer: The Precondition}
+\label{sec:content}
 
 \begin{table}[t]
 \caption{Binding transfer, 8 names $\times$ 8 values, $n = 1000$ episodes, chance 12.5\%. All entries are percentages. ``follow'' is the rate at which the receiver, handed the deranged cache, answers with the other episode's value; ``content'' is project $-$ derange.}
@@ -79,7 +84,7 @@ This paper asks the narrowest version of that question. Given two frozen models 
 \vskip 0.1in
 \begin{center}
 \begin{small}
-\resizebox{\columnwidth}{!}{%
+\resizebox{0.97\columnwidth}{!}{%
 \begin{tabular}{lccccccc}
 \toprule
 projector & none & text & raw & project & derange & follow & content \\
@@ -101,20 +106,7 @@ residual, deranged sender          & 10.6 & 100 & 14 & 23.4 & 11.3 & 22.7 & 12.1
 \label{fig:arms}
 \end{figure}
 
-\Cref{tab:main} and \cref{fig:arms} give the main result. On the original 6-name variant ($n = 300$) three training seeds give 71.3 / 73.0 / 75.3\% (mean 73.2, sd 2.0). Two ablations on the same variant: freezing the ridge and training only the residual gives 59.0\%, so letting the linear map move during training is worth ${\sim}14$ points; replacing the correlation-selected top-3 source layers with the aligned-layer map gives 32.7\%, so which sender layers feed each receiver layer is the single largest design choice. Matching shape alone (\emph{raw}) does nothing. The follow rate is the decisive number: when the receiver is handed the wrong episode's cache it answers with the wrong episode's value 64\% of the time, and its accuracy falls below chance. The receiver believes the cache.
-
-With the full 8-name pool and 500 episodes, the seed-2 projector gives 65.8\% and 67.6\% on two episode seeds (ridge: 20.4\%, 20.6\%). On 256 fresh held-out sequences deduplicated against training text, continuation retention is 1.19 for the trained projector and $-0.38$ for the ridge.
-
-\textbf{Other attributes.} Same protocol with cities (``Vela lives in Paris'') and animals (``Vela is a fox''), $n = 500$: trained projector 61.8\% and 67.2\%; ridge 19.8\% and 12.8\%; deranged-sender control 15.4\% and 12.4\%.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{fig_distance.pdf}
-\caption{Noma accuracy as a function of the number of neutral filler tokens between the facts and the question (8-name variant; $n = 1000$ at 0, $n = 500$ otherwise). Transfer does not decay with distance; the best value is at the training prefix length of 512.}
-\label{fig:distance}
-\end{figure}
-
-\textbf{Distance.} Padding the facts with neutral filler so the question is 64 / 128 / 256 / 512 tokens after them: 61.0 / 57.0 / 62.4 / 68.8\% (\cref{fig:distance}). No decay; the best value is at the training prefix length.
+\textbf{Binding transfer.} \Cref{tab:main} and \cref{fig:arms} give the main content result. On the original 6-name variant ($n = 300$) three training seeds give 71.3 / 73.0 / 75.3\% (mean 73.2, sd 2.0). Two ablations on the same variant (\cref{app:ablations}): freezing the ridge and training only the residual gives 59.0\%, so letting the linear map move during training is worth ${\sim}14$ points; replacing the correlation-selected top-3 source layers with the aligned-layer map gives 32.7\%, so which sender layers feed each receiver layer is the single largest design choice. Matching shape alone (\emph{raw}) does nothing. The follow rate is the decisive number: when the receiver is handed the wrong episode's cache it answers with the wrong episode's value 64\% of the time, and its accuracy falls below chance. The receiver believes the cache. With the full 8-name pool and 500 episodes, the seed-2 projector gives 65.8\% and 67.6\% on two episode seeds (ridge: 20.4\%, 20.6\%). On 256 fresh held-out sequences deduplicated against training text, continuation retention is 1.19 for the trained projector and $-0.38$ for the ridge. The same protocol with cities and animals gives 61.8\% and 67.2\% (\cref{app:attrs}), and padding the facts with up to 512 filler tokens does not reduce accuracy (61.0 / 57.0 / 62.4 / 68.8\% at 64 / 128 / 256 / 512; \cref{app:distance}).
 
 \begin{table}[t]
 \caption{Where the binding lives. This episode's mapped cache is injected only into a band of receiver layers, the deranged episode's elsewhere. $n = 500$, 6-name variant; accuracy in percent.}
@@ -122,30 +114,23 @@ With the full 8-name pool and 500 episodes, the seed-2 projector gives 65.8\% an
 \vskip 0.1in
 \begin{center}
 \begin{footnotesize}
-\setlength{\tabcolsep}{3pt}
+\resizebox{0.97\columnwidth}{!}{%
 \begin{tabular}{lcccccccc}
 \toprule
 layers   & 0--5 & 0--11 & 0--17 & 12--23 & 24--35 & 30--35 & 18--35 & all \\
 \midrule
 accuracy & 7.2 & 8.0 & 10.4 & 28.6 & 30.8 & 7.6 & 51.8 & 63.0 \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{footnotesize}
 \end{center}
 \vskip -0.1in
 \end{table}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{fig_layers.pdf}
-\caption{Noma accuracy when only the labelled band of receiver layers receives this episode's mapped cache (the deranged episode's cache fills the rest). Solid line: the deranged cache in all layers; dashed line: chance.}
-\label{fig:layers}
-\end{figure}
-
-\textbf{Where the binding lives.} \Cref{tab:layers} and \cref{fig:layers}: the first half of the network carries nothing usable on its own; the second half alone carries most of it, and no six-layer band suffices. The binding is read out from a distributed set of later layers.
+\textbf{Where the binding lives.} \Cref{tab:layers} (plotted in \cref{app:distance}, \cref{fig:layers}): the first half of the network carries nothing usable on its own; the second half alone carries most of it, and no six-layer band suffices. The binding is read out from a distributed set of later layers.
 
 \begin{table}[t]
-\caption{Real passages: SQuAD v1.1 validation. The sender reads the passage ($\le 512$ tokens); the receiver reads only the question and answers greedily ($\le 8$ tokens, stopped at newline). Token-F1 against the gold spans, $n = 300$ (600 for the trained projector); mean gold log-probability per token.}
+\caption{Real passages: SQuAD v1.1 validation, $n = 300$ (600 for the trained projector). Token-F1 against the gold spans; mean gold log-probability per token.}
 \label{tab:qa}
 \vskip 0.1in
 \begin{center}
@@ -171,16 +156,166 @@ gold log-prob / token & $-3.57$ & $-0.90$ & $-11.2$ & $-3.88$ & $-1.74$ & $-3.77
 \label{fig:qa}
 \end{figure}
 
-\textbf{Real passages.} \Cref{tab:qa} and \cref{fig:qa} apply the same projectors, never trained on questions, to SQuAD v1.1. On F1 the trained projector recovers 96\% of the gap between question-only and reading the passage (53.0 at $n = 300$; 51.8 at $n = 600$); on gold log-probability it recovers 69\%. The wrong passage's cache (derange), the ridge map, and the content-free projector all sit at or below question-only. The channel carries the passage, not a bias toward answering.
+\textbf{Real passages.} \Cref{tab:qa} and \cref{fig:qa} apply the same projectors, never trained on questions, to SQuAD. On F1 the trained projector recovers 96\% of the gap between question-only and reading the passage (53.0 at $n = 300$; 51.8 at $n = 600$); on gold log-probability it recovers 69\%. The wrong passage's cache (derange), the ridge map, and the content-free projector all sit at or below question-only. The channel carries the passage, not a bias toward answering.
+
+\begin{table}[t]
+\caption{Four sender--receiver pairs, same recipe. Noma 6-name variant, $n = 300$, chance 12.5\%; percentages. ``proj.'' is the \emph{project} arm, ``der.'' the \emph{derange} arm, ``follow'' the follow rate. SQuAD F1 is for the trained projector ($n = 300$; text ceiling 54.7). K2-Horizon unless named. The raw arm is undefined for K2-0.9B (head dimension 64).}
+\label{tab:pairs}
+\vskip 0.1in
+\begin{center}
+\begin{footnotesize}
+\resizebox{0.97\columnwidth}{!}{%
+\begin{tabular}{lcccccccc}
+\toprule
+& & \multicolumn{3}{c}{ridge top-3} & \multicolumn{3}{c}{$+$ trained residual} & \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+sender $\rightarrow$ receiver & raw & proj. & der. & follow & proj. & der. & follow & F1 \\
+\midrule
+3.7B $\rightarrow$ 7B    & 14.0 & 22.0 & 10.7 & 30.3 & \textbf{71.3} & 4.3 & 71.7 & 53.0 \\
+7B $\rightarrow$ 3.7B    & 11.7 & 29.0 & 12.3 & 31.3 & \textbf{63.3} & 5.7 & 63.0 & --- \\
+Qwen3-4B $\rightarrow$ 7B & 15.7 & 18.0 & 13.0 & 17.0 & \textbf{76.7} & 1.3 & 80.3 & 48.0 \\
+0.9B $\rightarrow$ 7B    & n/a  & 13.3 & 13.0 & 10.7 & 17.0 & 14.0 & 11.3 & 24.2 \\
+\bottomrule
+\end{tabular}}
+\end{footnotesize}
+\end{center}
+\vskip -0.1in
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_pairs.pdf}
+\caption{Noma accuracy (\emph{project} arm) for the closed-form ridge map and the trained projector on four sender--receiver pairs ($n = 300$, 6-name variant). Dashed line: chance. The trained map crosses families (Qwen3-4B) but not a vocabulary and head-dimension change within the family (K2-0.9B).}
+\label{fig:pairs}
+\end{figure}
+
+\textbf{Across pairs and families.} \Cref{tab:pairs} and \cref{fig:pairs}. The channel is not one-way: with the roles swapped (7B sender, 3.7B receiver) the ridge map gives 29.0\% and the trained projector 63.3\%, with the deranged cache at 5.7\% and a 63\% follow rate---the same pattern at slightly lower accuracy. With Qwen3-4B as the sender (36 layers, 8 KV heads, head dimension 128---matched KV geometry---but a different vocabulary and pre-training), receiver positions are aligned to sender tokens by character offsets and the same recipe is run: top-3 ridge 18.0\% (raw injection 15.7\%, deranged 13.0\%), trained projector 76.7\% (deranged 1.3\%, follow rate 80\%), SQuAD F1 48.0 against 54.7 for the receiver reading the text. Cross-family transfer is as strong as within-family on the binding test and within 7 F1 of it on passages, and the linear map alone does nothing across families. The recipe fails for K2-Horizon-0.9B, a same-family sender with a different vocabulary and head dimension 64: the trained projector reaches 17.0\% (deranged 14.0\%, follow 11.3\%; content transfer 3 points) and 24.2 F1 on SQuAD. Matched head dimension, not shared pre-training, is what the per-head map needs.
+
+\begin{table}[t]
+\caption{Different contexts: HotpotQA bridge questions, $n = 400$. Sender and receiver each hold one of the two supporting paragraphs; the receiver always reads its own paragraph and the question. Token-F1.}
+\label{tab:hotpot}
+\vskip 0.1in
+\begin{center}
+\begin{small}
+\begin{tabular}{lc}
+\toprule
+receiver additionally gets & F1 \\
+\midrule
+nothing (own paragraph $+$ question)        & 30.1 \\
+the sender's paragraph as text              & 45.8 \\
+the sender's paragraph as a mapped cache    & \textbf{37.9} \\
+a deranged mapped cache                     & 29.9 \\
+the sender's paragraph through the ridge map & 26.3 \\
+a zero cache                                & 20.9 \\
+\bottomrule
+\end{tabular}
+\end{small}
+\end{center}
+\vskip -0.1in
+\end{table}
+
+\textbf{Different contexts.} \Cref{tab:hotpot}: HotpotQA bridge questions, sender and receiver each holding one of the two supporting paragraphs (the LCF-X setting of \citealp{2605.22863}). The receiver with its own paragraph and the question reaches F1 30.1; with both paragraphs as text 45.8; with its own paragraph plus the sender's mapped cache 37.9---half of the gap---while the deranged cache gives 29.9 (no help), the ridge map 26.3 and a zero cache 20.9. The channel carries the \emph{other} paragraph, and only the trained map does.
+
+\begin{table}[t]
+\caption{What the message costs. Message size is bytes per prefix token of the mapped cache (512-token SQuAD passages; ``KB'' $= 1024$ bytes). Noma: 6-name variant, $n = 300$, seed-2 projector (full cache 75.3\%). Rows with a smaller projector are separate 1,000-step training runs. The full sweep is in \cref{app:compress}.}
+\label{tab:cost}
+\vskip 0.1in
+\begin{center}
+\begin{footnotesize}
+\resizebox{0.97\columnwidth}{!}{%
+\begin{tabular}{llccc}
+\toprule
+message & & KB / token & Noma & SQuAD F1 \\
+\midrule
+full mapped cache, bf16 & & 144 & 75.3 & 53.0 \\
+int8 fake-quantised     & & 72  & 76.0 & 52.1 \\
+int4 fake-quantised     & & 36  & 75.0 & 51.6 \\
+low-rank, rank 32       & & 78.7 & 75.0 & 45.3 \\
+low-rank, rank 16       & & 39.3 & 75.0 & 29.6 \\
+layers 18--35 only, zeros elsewhere & & 72 & 24.3 & 8.3 \\
+4 of 8 heads, zeros elsewhere       & & 72 & 25.7 & 8.2 \\
+layers 18--35, mean-vector fill     & & 72.7 & 33.7 & 21.4 \\
+layers 12--35, mean-vector fill     & & 96.4 & 35.0 & 28.8 \\
+\midrule
+projector bottleneck 32 (70\,M params) & & 144 & 64.3 & 53.7 \\
+projector bottleneck 16 (62\,M params) & & 144 & 61.3 & 51.6 \\
+\bottomrule
+\end{tabular}}
+\end{footnotesize}
+\end{center}
+\vskip -0.1in
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_cost.pdf}
+\caption{Message size against SQuAD F1 for every compression of the mapped cache we tried ($n = 300$). Quantisation is free; low-rank truncation and dropping layers or heads are not. The two ``zeros'' points at 72 and 36 KB each hide two coincident specs.}
+\label{fig:cost}
+\end{figure}
+
+\textbf{What the message costs.} The full mapped cache is 36 layers $\times$ 8 heads $\times$ 2 $\times$ 128 $\times$ bf16 $=$ 144\,KB per token, 75\,MB for a 512-token prefix, against ${\sim}1$\,KB of text; the projector has 151\,M parameters. \Cref{tab:cost} and \cref{fig:cost}: two things shrink it for free and two do not. int8 and int4 fake-quantisation of the mapped cache keep binding accuracy (76.0 / 75.0 vs 75.3\%) and SQuAD F1 (52.1 / 51.6 vs 53.0)---bytes $\div 4$. A projector with bottleneck 32 has 70\,M parameters and keeps SQuAD F1 (53.7) while losing 9 points on the binding test (64.3\%); bottleneck 16 (62\,M) gives 61.3\% and 51.6 F1. Dropping layers or heads with zeros in their place collapses transfer (layers 18--35 only: 24.3\%; 4 heads: 25.7\%), unlike the layer-band experiment where the other layers carried a \emph{plausible} cache; an all-zero layer makes the receiver attend uniformly to nothing and drowns the question. Filling untransmitted layers with a one-vector summary (the position-mean of that layer's mapped cache) recovers only part of it (layers 18--35: 33.7\%; layers 12--35: 35.0\%; SQuAD F1 21--29), so with this projector the message cannot be cut by layers: every receiver layer wants its own cache. Low-rank truncation of each (positions $\times$ head-dim) matrix keeps the binding test (rank 32 / 16: 75.0\%) but not passages (F1 45.3 / 29.6). Latency on one A100: the receiver re-reading 512 tokens takes 48\,ms, the projector 24\,ms ($2.0\times$; the sender's own read, 45\,ms, is already paid). The message is therefore cheap in time and expensive in bytes; the honest framing is that the channel is worth it when the sender's state is the point---which the next section tests.
+
+\section{Does the Cache Carry How Sure the Sender Was?}
+\label{sec:uncertainty}
+
+\begin{tcolorbox}[breakable, enhanced, colback=white, colframe=black, boxrule=0.5pt, arc=0pt, left=3pt, right=3pt, top=2pt, bottom=2pt, before skip=4pt, after skip=6pt]
+\small
+\textbf{Why a text handoff launders uncertainty, and what a state handoff can keep.}
+Sender $S$ reads context $c$ and holds a belief $p_S(y \mid c)$ over answers; it hands off through a message $m = f(c, S)$, and the receiver produces $p_R(y \mid m, q)$. With $m = \arg\max_y p_S(y \mid c)$, $m$ takes at most $|Y|$ values, so the information $m$ carries about $p_S$ is bounded by $\log |Y|$ nats however peaked or flat $p_S$ is: two senders with the same mode and entropies 0.1 and 2.0 send the same message. A verbalised confidence word adds at most $\log k$ nats ($k = 3$ levels here) and relies on the sender's verbal calibration, which is poor for base models \citep{tian2023just,yona2024can}. This is the mechanism behind confidence laundering \citep{2606.20662}. With $m$ the KV cache of $S$ at every layer and position, $m$ is a sufficient statistic for $S$'s next-token distribution, so $I(m; p_S)$ is not bounded by $\log |Y|$. What the receiver recovers is limited by two losses: \emph{map loss}---the map $g$ is fit on continuation likelihood, and a learned map trained on point targets contracts predictive variance \citep{2601.18909}; and \emph{read loss}---$R$ reads the mapped cache with its own heads, from its later layers (\cref{tab:layers}). Predictions: (1) the verbal handoff cannot beat its $\log k$ bound, so its AUROC against the sender's semantic entropy sits near the tercile-label ceiling; (2) the cache handoff can exceed it and approach the text-reading receiver's, its shortfall being map loss; (3) neither can exceed the ceiling set by how far $R$'s first-token entropy correlates with $S$'s semantic entropy at all, which is why absolute AUROCs are ${\sim}0.6$ and the comparison must be relative.
+\end{tcolorbox}
+
+\textbf{Protocol.} Following the knowledge-conflict and semantic-entropy protocols \citep{longpre2021entity,xie2023adaptive,farquhar2024detecting}, each SQuAD item gets three passages: \emph{clean}, \emph{contradicted} (one fluent sentence asserting a counter-answer, written by the 375B judge and kept only if DeBERTa-MNLI says it entails the counter-answer and not the gold: 587 of 941 survive), and \emph{removed} (the gold sentence deleted). We keep the 377 items the receiver answers correctly from clean text. The sender's uncertainty is its semantic entropy over 10 sampled answers (mean 1.10 / 1.23 / 1.96 across the three variants, so the sender does notice). The receiver's uncertainty is its entropy at the first answer token. The text handoff with a confidence word (\emph{verbal}) is the text channel doing its best to carry uncertainty: the sender writes its greedy answer and ``confidence: high / medium / low'' (terciles of its own semantic entropy), and the receiver reads only that. The drop ratio is the receiver's loss of $P(\text{gold})$ from clean to removed, relative to the text path's loss.
+
+\begin{table*}[t]
+\caption{Sender uncertainty through each handoff; 377 SQuAD items the receiver answers correctly from clean text. AUROC is of the receiver's first-token entropy against the sender's semantic entropy (thresholded at its median per variant); the drop ratio is the receiver's $P(\text{gold})$ loss from clean to removed relative to the text path's.}
+\label{tab:confidence}
+\vskip 0.1in
+\begin{center}
+\begin{small}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+receiver sees & \shortstack{$P(\text{gold})$\\clean / contra. / removed} & \shortstack{entropy\\clean / removed} & \shortstack{AUROC vs sender SE\\clean / contra. / removed} & drop ratio \\
+\midrule
+text                                & .437 / .290 / .162 & 1.14 / 3.03 & .597 / .615 / .671 & 1 (def.) \\
+text $+$ answer $+$ confidence word (verbal) & .253 / .193 / .171 & 2.88 / 2.80 & .552 / .542 / .592 & .30 \\
+\textbf{mapped cache}               & .279 / .249 / .130 & 1.78 / 3.16 & \textbf{.585 / .605 / .624} & \textbf{.54} \\
+deranged cache                      & .105 / .106 / .105 & 3.88 / 3.88 & .536 / .488 / .564 & 0 \\
+zero cache                          & .034 / .033 / .037 & 6.41 / 6.18 & .496 / .481 / .502 & 0 \\
+moment-matched random cache         & .005 / .004 / .005 & 7.24 / 7.30 & .457 / .472 / .580 & 0 \\
+question only                       & .127               & 3.69        & .532 / .479 / .603 & 0 \\
+\midrule
+mapped cache, KL-trained projector  & .272 / .241 / .118 & 2.38 / 3.76 & .590 / .589 / .611 & .56 \\
+\bottomrule
+\end{tabular}}
+\end{small}
+\end{center}
+\vskip -0.1in
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_confidence.pdf}
+\caption{Left: AUROC of the receiver's first-token entropy against the sender's semantic entropy, per handoff and passage variant (377 items). Every content-free control sits at .46--.54; the mapped cache sits just below the receiver reading the text and above the text handoff with a confidence word. Right: the receiver's $P(\text{gold})$ from clean to contradicted to removed passages. The cache path is less confident than the text path on clean passages and keeps the original answer ahead under a contradiction.}
+\label{fig:confidence}
+\end{figure*}
+
+\textbf{Result.} \Cref{tab:confidence} and \cref{fig:confidence}. The mapped cache beats the verbal handoff on every measure: it tracks the sender's uncertainty better (AUROC $+.03$ to $+.06$, on all three variants), it loses 54\% of the confidence the text path loses on unanswerable passages where the verbal handoff loses 30\%, and it answers better on clean and contradicted passages (F1 59.8 / 49.0 vs 55.0 / 37.7). A one-word confidence is a $\log 3$ nat channel; the cache is not so limited, and the receiver uses the difference.
+
+Three readings. (i) The receiver's confidence through the cache tracks the \emph{sender's} semantic entropy about as well as it does when the receiver reads the text itself (AUROC .585 vs .597 on clean; every content-free control sits at .46--.54), and the absolute level is bounded by the text path, not by the channel. (ii) When the answer is removed, the cache path loses 54\% of the confidence the text path loses and its entropy rises by 73\% of the text path's rise: uncertainty crosses, attenuated---the compression of predictive variance that distillation work \citep{2601.18909} predicts for any learned map. (iii) Under a contradiction the text path is swayed slightly more by the inserted sentence than by the original ($P(\text{counter})$ .32 $>$ $P(\text{gold})$ .29), while the cache path keeps the original ahead (.25 $>$ .22) and its F1 is higher (49.0 vs 45.2). Across all conditions the cache path is less confident than the text path on clean passages ($P(\text{gold})$ .28 vs .44), so a receiver that treats the two channels as equivalent would under-trust the cache; per-channel calibration is the obvious fix.
+
+\textbf{A negative result on training the loss away.} Adding $\mathrm{KL}(\text{text-path} \,\|\, \text{cache-path})$ on the receiver's next-token distributions to the projector's objective (weight 1, 1,000 steps) raises the cache path's entropy everywhere (clean 2.38 vs 1.78) without making it track the sender better (AUROC .590 / .589 / .611; drop ratio .56 vs .54) and costs 2 F1 (\cref{tab:confidence}, last row). Matching the receiver's own text-path distribution is the wrong target: what is lost is the \emph{sender's} spread, which the receiver's text path does not contain either. A sender-side target (matching the receiver's cache-path entropy to the sender's semantic entropy) is the next experiment, not this paper's.
 
 \section{Controls}
 \label{sec:controls}
 
-Three controls bound what the receiver actually gets from the cache.
+Three controls bound what the receiver actually gets from the cache, and a fourth shows why the usual headline number cannot.
 
 \textbf{Deranged cache.} The \emph{derange} arm of \cref{tab:main}: a mapped cache from another episode with the same layout but a different value for the queried name. Accuracy falls to 4.6\% and the receiver answers with the other episode's value 63.7\% of the time. The receiver is not ignoring the cache; it is reading it.
 
 \textbf{Deranged-sender projector.} A projector trained with the identical recipe but with the sender reading text unrelated to the receiver's continuation. It cannot learn a content channel, only a soft prompt. It reaches 23.4\% on the binding test (\cref{tab:main}, row 3) and 15.1 F1 on SQuAD (\cref{tab:qa}), both at the question-only level.
+
+\textbf{Layer-band injection.} \Cref{tab:layers}: injecting this episode's cache into layers 0--17 alone gives chance (10.4\%); layers 18--35 alone give 51.8\%; no six-layer band suffices.
 
 \begin{table}[t]
 \caption{Continuation retention is the wrong headline. Retention $= (\mathrm{loss}_{\text{none}} - \mathrm{loss}_{\text{project}}) / (\mathrm{loss}_{\text{none}} - \mathrm{loss}_{\text{oracle}})$ on 128 fresh held-out sequences; the second column swaps the sender's text at test time.}
@@ -211,22 +346,20 @@ residual, deranged sender & 0.77    & 0.72 \\
 
 \textbf{Continuation retention is the wrong headline.} Following the closed-form-map literature \citep{2608.03893} we also report retention (\cref{tab:retention}, \cref{fig:retention}). A projector trained with the sender reading the \emph{wrong} text---a learned soft prompt with no content channel---recovers 77\% of the oracle gap, and almost all of it (0.72) survives when its input is deranged at test time. The trained projector's 1.23 decomposes into ${\sim}0.3$ of the same prompt-like effect and ${\sim}0.9$ that disappears when the sender's text is swapped. Retention above 1 is therefore not evidence of communication, and retention alone cannot distinguish a channel from a prompt; the binding test with its derange arm can.
 
-\textbf{Layer-band injection.} \Cref{tab:layers} and \cref{fig:layers}, discussed above: injecting this episode's cache into layers 0--17 alone gives chance (10.4\%); layers 18--35 alone give 51.8\%; no six-layer band suffices.
-
 \section{Related Work}
 \label{sec:related}
 
-Cache-to-cache communication \citep[C2C;][]{2510.03215} and Latent Cache Flow \citep{2605.22863} train fusers between models of similar size; a closed-form KV map \citep{2608.03893} reports 44--98\% continuation retention across sizes; a causal audit \citep{2608.04893} finds that deranged caches lose only 0.4 points in such setups, which is the objection our derange and deranged-sender arms answer. A second audit \citep{2607.26773} decomposes the aggregate effect of a latent channel into ``sender content'' and ``any message present'' terms with boundary-replacement controls; our deranged-sender projector isolates the second term directly. Dual-Cache \citep{2608.20617}, CacheBridge \citep{2609.00891} and HyLaT \citep{2605.25421} extend cache transfer to heterogeneous pairs and hybrid latent--text protocols. The Replay Gap \citep{2608.08239} and Confidence Laundering \citep{2606.20662} argue that handoffs must be evaluated on branched rollouts and must carry uncertainty; both are next steps for this line. These works are concurrent with ours; we treat them as the surrounding conversation, not as prior results this paper improves on.
+Cache-to-cache communication \citep[C2C;][]{2510.03215} and Latent Cache Flow \citep{2605.22863} train fusers between models of similar size; a closed-form KV map \citep{2608.03893} reports 44--98\% continuation retention across sizes; a causal audit \citep{2608.04893} finds that deranged caches lose only 0.4 points in such setups, which is the objection our derange and deranged-sender arms answer. A second audit \citep{2607.26773} decomposes the aggregate effect of a latent channel into ``sender content'' and ``any message present'' terms with boundary-replacement controls; our deranged-sender projector isolates the second term directly. Dual-Cache \citep{2608.20617}, CacheBridge \citep{2609.00891} and HyLaT \citep{2605.25421} extend cache transfer to heterogeneous pairs and hybrid latent--text protocols. In the last six weeks, a universal context-reuse layer \citep{2608.30963} makes one model's KV state consumable by another across scale, tokenizer and family (including Llama-3.1-70B $\rightarrow$ Qwen2.5-7B) but reports no content-free control or uncertainty test; StateBridge \citep{2608.13317} aligns final-layer hidden states into the receiver's input-embedding space with a closed-form orthogonal map and no training, a natural training-free baseline for our fitted projector; LatentPort \citep{2609.25053} hands attention KV plus recurrent state from a 4B to a 9B hybrid model without prefix replay, scored on continuation NLL rather than question answering; MentorPulse \citep{2608.20927} finds that a static one-shot latent handoff can fall below no guidance on long-form generation, a scope limit our short-answer setting does not probe; and a preregistered alignment ladder between trained language-model cells \citep{2609.11365} runs a leakage-controlled causal audit close in spirit to our derange arms. The Replay Gap \citep{2608.08239} and Confidence Laundering \citep{2606.20662} argue that handoffs must be evaluated on branched rollouts and must carry uncertainty; the second is the question \cref{sec:uncertainty} answers for one channel, the first remains a next step. On the uncertainty side we borrow the knowledge-conflict construction of \citet{longpre2021entity} and \citet{xie2023adaptive}, semantic entropy as the sender's uncertainty \citep{farquhar2024detecting}, the finding that verbalised confidence is poorly calibrated \citep{tian2023just,yona2024can}, and the result that distillation-style maps contract predictive variance \citep{2601.18909}. These works are concurrent with ours; we treat them as the surrounding conversation, not as prior results this paper improves on.
 
 \section{Limitations}
 \label{sec:limitations}
 
-The results show that a specific fact can cross from a 3.7B cache into a 7B without text, that the crossing depends on the cache's content, and that the receiver reads it out from its later layers. They do not show that the channel is cheaper than text (a 512-token cache is ${\sim}75$\,MB against ${\sim}1$\,KB of text; compression is future work), that it carries anything richer than a single-token binding, or that it works across model families. The channel is not one-way: with the roles swapped (7B sender, 3.7B receiver, same recipe) the ridge map gives 29.0\% and the trained projector 63.3\% on the 6-name test, with the deranged cache at 5.7\% and a 63\% follow rate---the same pattern at slightly lower accuracy. All results are on a single model family and a single size pair.
+The results show that a specific fact can cross from a 3.7B cache into a 7B without text, that the crossing depends on the cache's content, that the receiver reads it out from its later layers, and that the mapped cache keeps more of the sender's uncertainty than a text handoff with a confidence word. They do not show that the channel is cheaper than text in bytes (144\,KB per token against ${\sim}1$\,KB of text for a passage; quantisation buys $4\times$ and nothing else we tried is free), that it carries anything richer than a single fact or a short answer span, or that it survives long-form generation, where \citet{2608.20927} report that a static latent handoff can hurt. The uncertainty result rests on 377 items of one dataset, one receiver, one sender-uncertainty measure and one design of confidence word; the absolute AUROCs are ${\sim}0.6$ for every channel including text, so the claim is relative. The map works across families only when head dimension matches (Qwen3-4B yes, K2-Horizon-0.9B no). The first attempt to train the confidence loss away failed, and the sender-side objective that the theory box suggests is untested.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-A learned cache map turns a size-mismatched pair of frozen models into a sender and a receiver. The controls matter more than the headline: the wrong cache is followed, the content-free projector fails the test, and the signal is read out late in the receiver. The next question is whether the same channel can carry how sure the sender was.
+A text handoff is a point estimate and cannot carry more than $\log |Y|$ nats about how sure the sender was; a confidence word adds $\log 3$. A learned map from a small model's KV cache to a larger model's carries the content (63--73\% binding transfer, 53.0 F1 on SQuAD, 76.7\% across families) and, on top of it, more of the sender's uncertainty than the text handoff with a confidence word does (AUROC .585--.624 vs .542--.592; drop ratio .54 vs .30). The controls matter more than the headline: the wrong cache is followed, the content-free projector fails the test, retention cannot tell a channel from a prompt, and the signal is read out late in the receiver. What is lost is the sender's spread, and matching the receiver's own text-path distribution does not recover it; a sender-side target is the next experiment.
 
 \section*{Impact Statement}
 
@@ -261,6 +394,9 @@ $+$ residual, 1500 steps, seed 1              & 73.0 & 3.0  & 74.0 \\
 $+$ residual, 1500 steps, seed 2              & 75.3 & 2.3  & 76.0 \\
 $+$ residual, 1500 steps, ridge frozen        & 59.0 & 7.0  & 59.3 \\
 $+$ residual, 1500 steps, aligned-layer ridge & 32.7 & 8.0  & 34.7 \\
+$+$ residual, 1000 steps, bottleneck 32       & 64.3 & 5.7  & 62.3 \\
+$+$ residual, 1000 steps, bottleneck 16       & 61.3 & 7.7  & 60.0 \\
+$+$ residual, 1000 steps, $+$ KL(text $\|$ cache) & 66.0 & 5.3 & 63.3 \\
 \bottomrule
 \end{tabular}
 \end{small}
@@ -294,7 +430,7 @@ reversed & trained              & 11.7 & 63.3 & 5.7  & 63.0 \\
 \end{center}
 \end{table}
 
-\section{Distance Sweep}
+\section{Distance Sweep and Layer Bands}
 \label{app:distance}
 
 \begin{table}[h]
@@ -310,6 +446,57 @@ projector & 0 & 64 & 128 & 256 & 512 \\
 ridge top-3          & 21.7 & 22.2 & 22.4 & 22.8 & 24.2 \\
 trained              & 63.0 & 61.0 & 57.0 & 62.4 & 68.8 \\
 deranged-sender ctrl & 23.4 & 25.0 & 19.8 & 18.2 & 13.8 \\
+\bottomrule
+\end{tabular}
+\end{small}
+\end{center}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\begin{subfigure}{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{fig_distance.pdf}
+\caption{Accuracy against filler tokens between the facts and the question (8-name variant; $n = 1000$ at 0, $n = 500$ otherwise). No decay; the best value is at the training prefix length of 512.}
+\label{fig:distance}
+\end{subfigure}\hfill
+\begin{subfigure}{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{fig_layers.pdf}
+\caption{Accuracy when only the labelled band of receiver layers receives this episode's mapped cache (the deranged episode's cache fills the rest; \cref{tab:layers}). Solid line: the deranged cache in all layers; dashed: chance.}
+\label{fig:layers}
+\end{subfigure}
+\caption{Distance sweep and layer-band injection.}
+\end{figure}
+
+\section{Compression Sweep}
+\label{app:compress}
+
+\begin{table}[h]
+\caption{Every compression of the seed-2 projector's mapped cache. KB per token is for 512-token SQuAD passages; low-rank truncation and mean-vector fill have a per-sequence overhead, so their per-token size depends on sequence length (for the 29-token Noma facts, rank 32 exceeds the full cache). Noma: 6-name variant, $n = 300$, percent; SQuAD: $n = 300$, token-F1.}
+\label{tab:compress}
+\vskip 0.1in
+\begin{center}
+\begin{small}
+\begin{tabular}{lcccc}
+\toprule
+spec & KB / token & Noma project & Noma derange & SQuAD F1 \\
+\midrule
+none (full, bf16)                       & 144  & 75.3 & 2.3  & 53.0 \\
+int8                                    & 72   & 76.0 & 2.7  & 52.1 \\
+int4                                    & 36   & 75.0 & 3.7  & 51.6 \\
+rank 32                                 & 78.7 & 75.0 & 2.3  & 45.3 \\
+rank 16                                 & 39.3 & 75.0 & 2.3  & 29.6 \\
+rank 8                                  & 19.7 & 51.7 & 7.0  & 17.2 \\
+layers 18--35, zeros                    & 72   & 24.3 & 9.7  & 8.3 \\
+layers 18--35, zeros, int8              & 36   & 24.7 & 9.7  & 7.8 \\
+4 heads, zeros                          & 72   & 25.7 & 8.7  & 8.2 \\
+2 heads, zeros                          & 36   & 22.3 & 9.7  & 5.9 \\
+layers 12--35, mean fill                & 96.4 & 35.0 & 11.0 & 28.8 \\
+layers 18--35, mean fill                & 72.7 & 33.7 & 11.7 & 21.4 \\
+layers 18--35, mean fill, int4          & 18.7 & 33.3 & 11.7 & 21.1 \\
+layers 24--35, mean fill                & 48.9 & 29.3 & 12.0 & 14.5 \\
+4 heads, mean fill                      & 72.7 & 23.0 & 11.3 & 15.3 \\
 \bottomrule
 \end{tabular}
 \end{small}
