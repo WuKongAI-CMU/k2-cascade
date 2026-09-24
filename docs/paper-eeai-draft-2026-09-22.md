@@ -181,6 +181,16 @@ everywhere (clean 2.38 vs 1.78) without making it track the sender better (AUROC
 is the *sender's* spread, which the receiver's text path does not contain either. A sender-side target (matching
 the receiver's cache-path entropy to the sender's semantic entropy) is the next experiment, not this paper's.
 
+**When should the small model hand off? (Table 2g).** On 600 SQuAD items the 3.7B alone reaches F1 52.2 and
+gets 35.5% of items wrong (F1 < 0.5). A logistic probe on its pre-action hidden state (last prompt token,
+layers 12/18/24, nested 5-fold) predicts those failures with AUROC .749, better than its own semantic entropy
+(.689), sample disagreement (.683), max-probability (.582) or entropy (.584). But the 7B reading the passage
+reaches only 55.7, the mapped cache 51.8 and the verbal handoff 47.0, so no trigger makes a handoff pay at equal
+latency: the probe-triggered text handoff climbs from 52.2 to 55.7 as the handoff rate goes to 1, the cache
+handoff stays flat at 52, and only an oracle trigger gains (56.4 at rate .4). On this task the receiver is not
+enough better than the sender for a handoff of any kind to be worth it; the probe result stands, the policy
+result waits for a task with a real gap.
+
 **Continuation retention is the wrong headline (Table 3).** Following the closed-form-map literature we also
 report retention = (loss_none − loss_project)/(loss_none − loss_oracle) on 128 fresh held-out sequences.
 
