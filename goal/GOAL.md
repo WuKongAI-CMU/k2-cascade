@@ -1,4 +1,4 @@
-# Goal ladder (set 2026-09-24; reviewed weekly, rewritten quarterly)
+# GOAL — the living ladder (north star / 12-month / quarter / week). Reviewed weekly; history in goal/LOG.md
 
 The ladder has four rungs. Each rung is judged only by the rung below it; the top rung is never "done".
 
