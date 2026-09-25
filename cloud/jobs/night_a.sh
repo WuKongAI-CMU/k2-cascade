@@ -37,4 +37,11 @@ done_p CONF_ENT || { conf_eval "runs/mlp_ent1/step_$STEPS" ent1 words; mark CONF
 done_p CONF_NUM || { conf_eval runs/mlp_seed2 numeric numeric; mark CONF_NUM; }
 done_p CONF_CANDS || { conf_eval runs/mlp_seed2 candidates candidates; mark CONF_CANDS; }
 done_p CONF_BELIEF || { conf_eval runs/mlp_seed2 belief candidates; mark CONF_BELIEF; }
+if ! done_p CONF_DIAG; then
+  for v in clean removed; do
+    $PY -m k2cascade.projector.diag_uncertainty --source "$SRC" --target "$TGT" --projector runs/mlp_seed2 --data data/conf.jsonl --se "analysis/conf/se_$v.jsonl" --variant $v --out "analysis/diag_unc_$v.json" > "logs/diag_unc_$v.log" 2>&1
+    note "diag $v: $(tail -1 logs/diag_unc_$v.log | cut -c1-300)"
+  done
+  mark CONF_DIAG
+fi
 note "night_a finished"
