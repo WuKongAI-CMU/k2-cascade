@@ -31,7 +31,13 @@ def attach(rows: list[dict], se_rows: dict[int, dict], mode: str = "words") -> l
             conf = "cands:" + "; ".join(f"{rep[l]} ({cnt[l] / k:.1f})" for l, _ in cnt.most_common())
         else:
             conf = "high" if r["se"] <= lo else ("medium" if r["se"] <= hi else "low")
-        out.append({**ex, "sender_answer": r["greedy"], "sender_se": r["se"], "sender_conf": conf})
+        labels, answers = r.get("labels", []), r.get("answers", []); kk = max(len(labels) - 1, 1)
+        from collections import Counter
+        cnt = Counter(labels[:kk]); rep = {}
+        for a_, l in zip(answers[:kk], labels[:kk]):
+            rep.setdefault(l, a_)
+        cands = [[rep[l], c / kk] for l, c in cnt.most_common()] if labels else []
+        out.append({**ex, "sender_answer": r["greedy"], "sender_se": r["se"], "sender_conf": conf, "sender_cands": cands})
     return out
 
 

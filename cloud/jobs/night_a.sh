@@ -36,4 +36,5 @@ fi
 done_p CONF_ENT || { conf_eval "runs/mlp_ent1/step_$STEPS" ent1 words; mark CONF_ENT; }
 done_p CONF_NUM || { conf_eval runs/mlp_seed2 numeric numeric; mark CONF_NUM; }
 done_p CONF_CANDS || { conf_eval runs/mlp_seed2 candidates candidates; mark CONF_CANDS; }
+done_p CONF_BELIEF || { conf_eval runs/mlp_seed2 belief candidates; mark CONF_BELIEF; }
 note "night_a finished"

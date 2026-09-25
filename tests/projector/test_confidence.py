@@ -29,3 +29,16 @@ def test_analyse_tracks_sender_and_drop_ratio():
     assert abs(out["drop_ratio"]["project"] - 0.5) < 1e-9
     assert "p_gold_minus_text_ci" in out["per_variant"]["clean"]["project"]
     assert 0 < out["per_variant"]["clean"]["project"]["memorisation_ratio"] < 1
+
+
+def test_belief_structure_metric():
+    def row(i, pc_text, pc_proj):
+        r = _row(i, 1.0, 1.2, 0.8, 0.7)
+        r["sender_cands"] = [["a", 0.6], ["b", 0.3], ["c", 0.1]]
+        r["text"]["p_cands"] = pc_text; r["project"]["p_cands"] = pc_proj
+        return r
+    clean = {i: row(i, [0.5, 0.3, 0.1], [0.1, 0.3, 0.5]) for i in range(10)}
+    out = analyse({"clean": clean}, None)
+    b = out["belief"]["clean"]
+    assert b["text"]["spearman_sender_freq"] > 0.99 and b["project"]["spearman_sender_freq"] < -0.99
+    assert abs(b["text"]["runner_up_share"] - 0.3 / 0.9) < 1e-9

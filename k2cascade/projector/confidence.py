@@ -135,6 +135,23 @@ def analyse(items: dict[str, dict[int, dict]], se: dict[str, dict[int, dict]] | 
                     st[f"auroc_{a}"] = auroc(ent, lab)
                     st[f"spearman_{a}"] = spearman(ent, ses)
                 out["sender_tracking"][v] = st
+    # belief structure: does the receiver's mass over the sender's candidate answers follow the sender's sampled
+    # frequencies (Spearman per item, items with >= 2 candidates), and how much mass lands on the runner-up
+    out["belief"] = {}
+    for v in items:
+        bv = {}
+        for a in arms:
+            sp, ru = [], []
+            for i in keep:
+                r = items[v][i]; sc = r.get("sender_cands") or []
+                pc = r[a].get("p_cands") if isinstance(r.get(a), dict) else None
+                if pc and len(sc) >= 2 and len(pc) == len(sc):
+                    fr = [c[1] for c in sc]
+                    sp.append(spearman(fr, pc)); ru.append(pc[1] / max(sum(pc), 1e-12))
+            if sp:
+                bv[a] = {"n": len(sp), "spearman_sender_freq": mean(sp), "runner_up_share": mean(ru)}
+        if bv:
+            out["belief"][v] = bv
     if "removed" in items and "clean" in items:
         for a in arms:
             if a == "text":

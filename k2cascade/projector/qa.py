@@ -111,7 +111,8 @@ def prefix_cache(arm: str, src: nn.Module, tgt: nn.Module, projector, passage: t
 
 @torch.no_grad()
 def score_item(tgt: nn.Module, cache, prefix_len: int, question: torch.Tensor, answer: torch.Tensor,
-               bos: list[int], max_new: int, newline_ids: set[int], counter: torch.Tensor | None = None) -> dict:
+               bos: list[int], max_new: int, newline_ids: set[int], counter: torch.Tensor | None = None,
+               cands: list[int] | None = None) -> dict:
     """Teacher-forced gold scoring, first-answer-token distribution stats, then greedy generation."""
     dev = question.device
     q = torch.cat([torch.tensor([bos], device=dev), question], 1) if (cache is None and bos) else question
@@ -128,6 +129,8 @@ def score_item(tgt: nn.Module, cache, prefix_len: int, question: torch.Tensor, a
            "entropy": float(-(p * first).sum()), "first_dist": first}
     if counter is not None:
         res["p_counter"] = p[counter[0, 0]].item()
+    if cands:  # receiver's mass on the first token of each of the sender's candidate answers
+        res["p_cands"] = [p[t].item() for t in cands]
     c2 = copy.deepcopy(cache) if cache is not None else None
     pos = torch.arange(prefix_len, prefix_len + q.shape[1], device=dev)
     out = tgt(input_ids=q, past_key_values=c2, position_ids=pos[None], cache_position=pos, use_cache=True)
@@ -180,17 +183,19 @@ def run(src, tgt, projector, tok, examples: list[dict], arms=ARMS, max_new: int 
                                             (ex["sender_answer"], ex.get("sender_conf", "unknown")))], device=dev)
         ans = torch.tensor([enc.answer(ex["answers"][0])], device=dev)
         counter = torch.tensor([enc.answer(ex["counter_answer"])], device=dev) if ex.get("counter_answer") else None
-        row, text_dist = {"i": i, "id": ex.get("id"), "variant": variant}, None
+        cands = [enc.answer(c[0])[0] for c in ex.get("sender_cands", []) if c[0].strip()] or None
+        row, text_dist = {"i": i, "id": ex.get("id"), "variant": variant,
+                          "sender_cands": ex.get("sender_cands")}, None
         for a in arms:
             if a in ("project", "derange", "zero", "random") and projector is None:
                 continue
             if a == "verbal":
                 if qv is None:
                     continue
-                r = score_item(tgt, None, 0, qv, ans, enc.bos, max_new, newline_ids, counter)
+                r = score_item(tgt, None, 0, qv, ans, enc.bos, max_new, newline_ids, counter, cands)
             else:
                 cache, plen = prefix_cache(a, src, tgt, projector, pa, other, seed=i)
-                r = score_item(tgt, cache, plen, q, ans, enc.bos, max_new, newline_ids, counter)
+                r = score_item(tgt, cache, plen, q, ans, enc.bos, max_new, newline_ids, counter, cands)
             pred = tok.decode(r.pop("tokens"))
             dist = r.pop("first_dist")
             if a == "text":
@@ -199,7 +204,7 @@ def run(src, tgt, projector, tok, examples: list[dict], arms=ARMS, max_new: int 
             r["em"], r["f1"], r["pred"] = em(pred, ex["answers"]), f1(pred, ex["answers"]), pred
             row[a] = r
             for k in keys:
-                if r.get(k) is not None:
+                if r.get(k) is not None and k != "p_cands":
                     stats[a][k] += r[k]; counts[a][k] += 1
         if per_item is not None:
             per_item.write(json.dumps(row) + "\n")
