@@ -32,3 +32,13 @@ def test_fill_mean_replaces_untransmitted_with_position_mean():
     k2, v2, info = apply(k, v, "layers=2-3,fill=mean")
     assert torch.allclose(k2[0][0, 0, 0], k[0][0, 0].mean(0)) and torch.allclose(k2[0][0, 0, 3], k[0][0, 0].mean(0))
     assert info["fill"] == "mean" and info["bytes_per_token"] > apply(k, v, "layers=2-3")[2]["bytes_per_token"]
+
+
+def test_fill_filler_uses_null_provider(target):
+    from k2cascade.projector.compress import filler_null
+    from tests.projector.test_qa import QATok
+    k, v = _kv(L=target.config.num_hidden_layers, H=target.config.num_key_value_heads, T=6,
+               d=target.config.hidden_size // target.config.num_attention_heads)
+    null = filler_null(target, QATok(), "the quiet room was empty ")
+    k2, v2, info = apply(k, v, "layers=1-2,fill=filler", null)
+    assert info["fill"] == "filler" and torch.count_nonzero(k2[0]) > 0 and torch.equal(k2[1], k[1])

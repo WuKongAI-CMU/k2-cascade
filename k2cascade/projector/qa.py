@@ -247,8 +247,9 @@ def main(argv=None) -> None:
     else:
         proj = RidgeProjector.load(a.projector, dev)
     if a.compress and proj is not None:
-        from .compress import Compressed
-        proj = Compressed(proj, a.compress)
+        from .compress import Compressed, filler_null
+        from .noma import FILLER as _FILLER
+        proj = Compressed(proj, a.compress, filler_null(tgt, tok, _FILLER) if "filler" in a.compress else None)
     examples = [json.loads(l) for l in open(a.data)][: a.n] if a.data else load_squad(a.n, a.seed)
     pi = open(a.per_item, "w") if a.per_item else None
     res = run(src, tgt, proj, tok, examples, tuple(a.arms.split(",")), a.max_new, variant=a.variant, per_item=pi)

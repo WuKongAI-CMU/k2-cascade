@@ -7,6 +7,9 @@ spec strings (comma-separated, applied in order):
   rank=16             truncated SVD of each (T, d) per-head matrix
   fill=mean           untransmitted layers/heads carry the per-(layer, head) position-mean of the projected cache
                       (a one-vector summary, 1/T of the bytes) instead of zeros
+  fill=filler         untransmitted layers/heads carry the receiver's own cache of a neutral filler text of the same
+                      length: a structurally valid, episode-free null state (zeros dilute the softmax; see the
+                      attention-sink literature), so this separates "content missing" from "attention broken"
 
 `bytes_per_token(keys, values, spec)` reports the message size the spec implies (bf16 = 2 bytes per element).
 """
@@ -36,8 +39,9 @@ def _low_rank(x: torch.Tensor, r: int) -> torch.Tensor:
     return (u[..., :r] * s[..., None, :r]) @ vh[..., :r, :]
 
 
-def apply(keys: list[torch.Tensor], values: list[torch.Tensor], spec: str | None):
-    """Return compressed (keys, values) lists and a dict describing the message size."""
+def apply(keys: list[torch.Tensor], values: list[torch.Tensor], spec: str | None, null=None):
+    """Return compressed (keys, values) lists and a dict describing the message size.
+    `null(T) -> (keys, values)` supplies the receiver's own filler cache for fill=filler."""
     L = len(keys)
     keep_layers, keep_heads, bits, rank, fill = set(range(L)), None, 16, None, "zero"
     if spec:
@@ -60,15 +64,24 @@ def apply(keys: list[torch.Tensor], values: list[torch.Tensor], spec: str | None
             else:
                 raise ValueError(op)
     ks, vs = [], []
-    def blank(x):  # what an untransmitted layer/head carries
-        return x.mean(dim=2, keepdim=True).expand_as(x).contiguous() if fill == "mean" else torch.zeros_like(x)
+    nk = nv = None
+    if fill == "filler":
+        if null is None:
+            raise ValueError("fill=filler needs a null(T) provider")
+        nk, nv = null(keys[0].shape[2])
+    def blank(x, j, which):  # what an untransmitted layer/head carries
+        if fill == "mean":
+            return x.mean(dim=2, keepdim=True).expand_as(x).contiguous()
+        if fill == "filler":
+            return (nk if which == "k" else nv)[j].to(x.dtype)
+        return torch.zeros_like(x)
     for j, (k, v) in enumerate(zip(keys, values)):
         if j not in keep_layers:
-            ks.append(blank(k)); vs.append(blank(v)); continue
+            ks.append(blank(k, j, "k")); vs.append(blank(v, j, "v")); continue
         if keep_heads is not None:
             m = torch.zeros(k.shape[1], device=k.device, dtype=k.dtype); m[:keep_heads] = 1
             mm = m[None, :, None, None]
-            k, v = k * mm + blank(k) * (1 - mm), v * mm + blank(v) * (1 - mm)
+            k, v = k * mm + blank(k, j, "k") * (1 - mm), v * mm + blank(v, j, "v") * (1 - mm)
         if rank is not None:
             k, v = _low_rank(k, rank).to(k.dtype), _low_rank(v, rank).to(v.dtype)
         if bits < 16:
@@ -87,12 +100,27 @@ def apply(keys: list[torch.Tensor], values: list[torch.Tensor], spec: str | None
 
 
 class Compressed:
-    """Wraps a projector so its output passes through `apply`."""
+    """Wraps a projector so its output passes through `apply`. `null` is a null(T) provider for fill=filler."""
 
-    def __init__(self, projector, spec: str | None):
-        self.projector, self.spec, self.info = projector, spec, None
+    def __init__(self, projector, spec: str | None, null=None):
+        self.projector, self.spec, self.info, self.null = projector, spec, None, null
 
     def __call__(self, bundle):
         k, v = self.projector(bundle)
-        k, v, self.info = apply(k, v, self.spec)
+        k, v, self.info = apply(k, v, self.spec, self.null)
         return k, v
+
+
+def filler_null(model, tokenizer, text: str):
+    """null(T): the receiver's own pre-RoPE K/V for `text` tokens (repeated) truncated to T positions, cached by T."""
+    from .extract import extract
+    ids = tokenizer(" " + text * 16, add_special_tokens=False)["input_ids"]
+    bos = [tokenizer.bos_token_id] if tokenizer.bos_token_id is not None else []
+    dev = next(model.parameters()).device
+    memo = {}
+    def null(T):
+        if T not in memo:
+            b = extract(model, torch.tensor([(bos + ids)[:T]], device=dev), with_hidden=False)
+            memo[T] = (b.keys, b.values)
+        return memo[T]
+    return null

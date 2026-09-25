@@ -214,8 +214,9 @@ def main(argv=None) -> None:
     else:
         proj = RidgeProjector.load(a.projector, dev)
     if a.compress and proj is not None:
-        from .compress import Compressed
-        proj = Compressed(proj, a.compress)
+        from .compress import Compressed, filler_null
+        from .noma import FILLER as _FILLER
+        proj = Compressed(proj, a.compress, filler_null(tgt, tok, _FILLER) if "filler" in a.compress else None)
     enc = Encoder(tok, a.names, a.colours, a.attr, a.pad)
     res = run(src, tgt, proj, enc, make_episodes(a.episodes, a.names, a.colours, a.seed), tuple(a.arms.split(",")), layers)
     res.update(source=a.source, target=a.target, projector=a.projector, seed=a.seed, attr=a.attr, pad=a.pad,
