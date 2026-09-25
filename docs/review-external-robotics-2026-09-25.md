@@ -37,3 +37,17 @@ Kept verbatim below for the record. What it changes for us (decided 2026-09-25):
 9. Bytes over a network: 72 MiB at 1 Gbps = 604 ms vs 24 ms saved; the paper must say the compute advantage
    does not translate to a network handoff at this size.
 10. The current setting is context reuse (passage prefix), not a mid-task handoff of an agent's reasoning state.
+
+## Fourth external review (2026-09-25, formulas + code): two experiments that change the reading of our results
+1. **Zero-fill dilutes the softmax** (N extra e^0 terms in the denominator), so the layer-pruning collapse mixes
+   "content missing" with "attention broken". Added `fill=filler` (receiver's own cache of a neutral text in the
+   untransmitted layers) as the structural null; running now. True per-layer masking is not expressible with a
+   single HF attention mask; the filler is the practical stand-in. Training-time layer dropout is the follow-up.
+2. **Four-point uncertainty probes** (sender state → mapped message → receiver hidden → output) with the same
+   question condition and passage-grouped folds; implemented in diag_uncertainty.py (raw, mapped, mapped+q,
+   receiver, text, question-only). Decides whether to fix the encoder, the map, or the receiver.
+3. Attention-output alignment (Heo: attn-output similarity correlates +.57 with retention, KV R² −.20) as a
+   diagnostic / auxiliary loss — next paper. MoT / C2C show cross-head maps exist: the 0.9B failure is "this
+   parameterisation", not "head dim". Evidence double-counting (same observation relayed twice looks like two
+   observations) and receiver-request-conditioned messages (Where2comm) — next paper's fusion experiments.
+Repos to read: thu-nics/C2C projector.py, OATML/semantic-entropy-probes, markli404 OBF, XiaoDu-flying/Interlat.
