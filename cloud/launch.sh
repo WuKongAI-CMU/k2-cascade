@@ -11,7 +11,7 @@ git fetch -q origin && git merge-base --is-ancestor "$COMMIT" origin/main || { e
 RUN="${K2_RUN:-$(echo "$JOB" | tr '_' '-')-$(date -u +%Y%m%d-%H%M%S)}"; NAME="k2-$RUN"
 PROV=(--provisioning-model=SPOT --instance-termination-action=DELETE)
 [ "$MODEL" = standard ] && PROV=(--provisioning-model=STANDARD --instance-termination-action=DELETE)
-for Z in us-central1-a us-central1-b us-central1-c us-central1-f; do
+for Z in ${K2_ZONES:-us-central1-a us-central1-b us-central1-c us-central1-f us-east1-b us-west1-b us-west4-b us-east4-c europe-west4-a}; do
   if gcloud compute instances create "$NAME" --project="$PROJECT" --zone="$Z" --machine-type="${K2_MACHINE:-a2-highgpu-1g}" \
       "${PROV[@]}" --max-run-duration="${HOURS}h" --maintenance-policy="${K2_MAINT:-TERMINATE}" \
       --boot-disk-size="${K2_DISK:-200GB}" --boot-disk-type=pd-balanced \
@@ -25,4 +25,4 @@ for Z in us-central1-a us-central1-b us-central1-c us-central1-f; do
   echo "$Z: $(grep -m1 -iE "error|exhausted|quota|invalid" /tmp/k2-launch.err | cut -c1-200)"
   grep -qiE "exhausted|does not have enough resources|capacity" /tmp/k2-launch.err || { cat /tmp/k2-launch.err; exit 1; }
 done
-echo "could not place the VM in any us-central1 zone"; exit 1
+echo "could not place the VM in any zone"; exit 1
