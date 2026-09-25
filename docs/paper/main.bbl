@@ -1,4 +1,4 @@
-\begin{thebibliography}{21}
+\begin{thebibliography}{24}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -15,6 +15,20 @@ Cheng, J., Das, S., and Ramnath, R.
 Cui, Z. and Pei, J.
 \newblock How is uncertainty propagated in knowledge distillation?
 \newblock \emph{arXiv preprint arXiv:2601.18909}, 2026.
+
+\bibitem[Dery et~al.(2026)Dery, Yahav, Prior, Feng, Shen, and
+  Szlam]{2601.06123}
+Dery, L.~M., Yahav, Z., Prior, H., Feng, Q., Shen, J., and Szlam, A.
+\newblock Latent space communication via {K-V} cache alignment.
+\newblock \emph{arXiv preprint arXiv:2601.06123}, 2026.
+
+\bibitem[Du et~al.(2025)Du, Wang, Bai, Cao, Zhu, Cheng, Zheng, Chen, and
+  Ying]{2511.09149}
+Du, Z., Wang, R., Bai, H., Cao, Z., Zhu, X., Cheng, Y., Zheng, B., Chen, W.,
+  and Ying, H.
+\newblock Enabling agents to communicate entirely in latent space.
+\newblock \emph{arXiv preprint arXiv:2511.09149}, 2025.
+\newblock ACL 2026.
 
 \bibitem[Farquhar et~al.(2024)Farquhar, Kossen, Kuhn, and
   Gal]{farquhar2024detecting}
@@ -88,6 +102,13 @@ Peng, Y., Zhang, D.~C., Wang, X., and Aletras, N.
   communication in {LLM} multi-agent systems.
 \newblock \emph{arXiv preprint arXiv:2608.13317}, 2026.
 \newblock COLM 2026.
+
+\bibitem[Pham et~al.(2023)Pham, Liu, Yang, Chen, Liu, Yuan, Plummer, Wang, and
+  Yang]{2310.06272}
+Pham, C., Liu, B., Yang, Y., Chen, Z., Liu, T., Yuan, J., Plummer, B.~A., Wang,
+  Z., and Yang, H.
+\newblock Let models speak ciphers: Multiagent debate through embeddings.
+\newblock \emph{arXiv preprint arXiv:2310.06272}, 2023.
 
 \bibitem[Qu et~al.(2026)Qu, Lu, Chen, Wang, and Lin]{2609.00891}
 Qu, X., Lu, S., Chen, Z., Wang, S., and Lin, T.
