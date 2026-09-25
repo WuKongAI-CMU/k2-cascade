@@ -51,3 +51,19 @@ Kept verbatim below for the record. What it changes for us (decided 2026-09-25):
    parameterisation", not "head dim". Evidence double-counting (same observation relayed twice looks like two
    observations) and receiver-request-conditioned messages (Where2comm) — next paper's fusion experiments.
 Repos to read: thu-nics/C2C projector.py, OATML/semantic-entropy-probes, markli404 OBF, XiaoDu-flying/Interlat.
+
+## Fifth external review (2026-09-25): audits before anything else
+1. Label-only AUROC: the confidence word alone (terciles vs median target) can reach 17/18 ≈ .944 in the ideal
+   case, so the verbal arm's .55 is a receiver read-out failure, not channel capacity. Compute it (audit_confidence.py).
+2. Paired, passage-grouped bootstrap CIs for the AUROC differences; 10-sample semantic entropy is discretised
+   (max ln 10 = 2.30; removed mean 1.96) — report distinct values / ties.
+3. The receiver's text path is an empirical reference, not a ceiling; a faithful state interface could exceed it.
+4. "Any learned map compresses uncertainty" overstates 2601.18909 (linear-regression guarantees); say "observed,
+   cause not isolated".
+5. Entropy matching ≠ belief matching; the right auxiliary target is a *reader* r(M, q) trained on the sender's
+   candidate distribution, kept separate from the receiver's own decision — next paper.
+6. Separate three goals: content reuse (question unseen by sender: M = f(c) vs f(c, q) must be stated), belief
+   recovery, decision quality; entropy correlation dropping can be the receiver correctly using its own evidence.
+7. Cite Dense Latent Communication (2606.13594, context-aware vs unaware), CacheBridge (attention-sensitive
+   error), LACO (identity confusion; latency ≠ bytes); StateBridge is homogeneous-only.
+8. Same-source baseline for the next paper: the same probe-extracted number sent as text vs as a soft prefix.
