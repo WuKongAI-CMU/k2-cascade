@@ -17,3 +17,23 @@ Kept verbatim below for the record. What it changes for us (decided 2026-09-25):
 ---
 
 (see the pasted review in the session transcript of 2026-09-25; not duplicated here to keep the repo small — key claims and arXiv ids: Fast-ThinkAct 2601.09708, Interlat 2511.09149, CloudEdgeVLA 2608.00569, Hi Robot 2502.19417, KnowNo (CoRL 2023), Where2comm (2022), StateBridge 2608.13317, Replay Gap 2608.08239, Figure Helix.)
+
+## Second and third external reviews (same day) — corrections to make before arXiv
+1. "All content-free controls sit at .46–.54" is false on the removed variant (question-only .603, random .580,
+   deranged .564 vs cache .624). Report per variant, and increments over question-only with paired CIs.
+2. The theory box's step from "log 3 nats" to "lower AUROC" is invalid: a binary label of "SE above median"
+   would give AUROC 1 to a perfect reader. The bound is about information on the *distribution*; the measured
+   gap is about how the receiver uses a label. Rewrite the box; the empirical claim stands, the deduction does not.
+3. The confidence word is built from the sender's actual semantic-entropy terciles (an oracle label), not from
+   the sender's own verbalisation. State it; it makes the text baseline stronger, not weaker.
+4. "Drop ratio .54" is a relative drop in P(gold), not "54% of the uncertainty retained". Define it as such.
+5. Heo et al.'s retention is an accuracy ratio, ours a continuation-loss gap ratio; do not conflate.
+6. The deranged-sender projector answers 23.4% (chance 12.5, question-only 10.6) because its ridge base is
+   content-dependent (ridge alone 21.7%); say so rather than calling it content-free.
+7. Head-dimension mismatch is one of several differences for K2-0.9B; say "fails on this pair", not "requires".
+8. Sender semantic entropy vs receiver first-token entropy are different measurements; the belief-structure
+   metric (candidate distribution) addresses this partly; the raw→mapped→receiver probe diagnostic addresses
+   where the loss occurs.
+9. Bytes over a network: 72 MiB at 1 Gbps = 604 ms vs 24 ms saved; the paper must say the compute advantage
+   does not translate to a network handoff at this size.
+10. The current setting is context reuse (passage prefix), not a mid-task handoff of an agent's reasoning state.
