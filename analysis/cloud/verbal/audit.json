@@ -1,0 +1,83 @@
+{
+ "clean": {
+  "n": 377,
+  "n_passages": 344,
+  "distinct_se_values": 38,
+  "frac_at_threshold": 0.029177718832891247,
+  "label_auroc_words": 0.9554973821989529,
+  "label_auroc_numeric": 0.8698136576028824,
+  "auroc": {
+   "none": 0.532258064516129,
+   "text": 0.5965490063615381,
+   "verbal": 0.5517930529752857,
+   "project": 0.5854866858075776,
+   "derange": 0.5355232787254405
+  },
+  "ci_project_minus_verbal": [
+   -0.026515377724693923,
+   0.09422372499295573
+  ],
+  "ci_project_minus_none": [
+   -0.005439568978915288,
+   0.11132906894100925
+  ],
+  "ci_project_minus_text": [
+   -0.0655165507967842,
+   0.04666216368344023
+  ]
+ },
+ "contradicted": {
+  "n": 377,
+  "n_passages": 344,
+  "distinct_se_values": 40,
+  "frac_at_threshold": 0.04774535809018567,
+  "label_auroc_words": 0.9415115623237451,
+  "label_auroc_numeric": 0.8475465313028765,
+  "auroc": {
+   "none": 0.4789622109419064,
+   "text": 0.615454032712916,
+   "verbal": 0.5421601804850535,
+   "project": 0.6045403271291596,
+   "derange": 0.48807106598984773
+  },
+  "ci_project_minus_verbal": [
+   0.00795717592592593,
+   0.11726305609284327
+  ],
+  "ci_project_minus_none": [
+   0.06490464116414951,
+   0.18044576196750106
+  ],
+  "ci_project_minus_text": [
+   -0.06394148020654045,
+   0.04710908733170305
+  ]
+ },
+ "removed": {
+  "n": 377,
+  "n_passages": 344,
+  "distinct_se_values": 28,
+  "frac_at_threshold": 0.22015915119363394,
+  "label_auroc_words": 1.0,
+  "label_auroc_numeric": 0.7349081364829396,
+  "auroc": {
+   "none": 0.6027463030535817,
+   "text": 0.6707957237052685,
+   "verbal": 0.5920875744190512,
+   "project": 0.6244798668459125,
+   "derange": 0.5636322898662057
+  },
+  "ci_project_minus_verbal": [
+   -0.023963623087390862,
+   0.08630120696830967
+  ],
+  "ci_project_minus_none": [
+   -0.03201280512204885,
+   0.07556299452221538
+  ],
+  "ci_project_minus_text": [
+   -0.09090909090909094,
+   -0.0015452606854776674
+  ]
+ }
+}
