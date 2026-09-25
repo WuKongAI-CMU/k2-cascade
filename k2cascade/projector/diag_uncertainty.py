@@ -40,16 +40,25 @@ def features(src, tgt, proj, enc: QAEncoder, ex: dict, variant: str, layers: lis
     h_rec = tgt.model(input_ids=q, past_key_values=cache, position_ids=pos[None], cache_position=pos,
                       use_cache=True).last_hidden_state[0, -1].float().cpu().numpy()
     h_text = tgt.model(input_ids=full).last_hidden_state[0, -1].float().cpu().numpy()
-    return {"raw": raw, "mapped": mapped, "receiver": h_rec, "text": h_text}
+    bos = torch.tensor([enc.bos], device=dev) if enc.bos else None
+    qo = torch.cat([bos, q], 1) if bos is not None else q
+    h_q = tgt.model(input_ids=qo).last_hidden_state[0, -1].float().cpu().numpy()  # question only, no passage
+    return {"raw": raw, "mapped": mapped, "mapped+q": np.concatenate([mapped, h_q]), "receiver": h_rec,
+            "text": h_text, "question": h_q}
 
 
-def probe_auroc(X: np.ndarray, y: np.ndarray, folds: int = 5, seed: int = 0) -> float:
+def probe_auroc(X: np.ndarray, y: np.ndarray, folds: int = 5, seed: int = 0, groups=None) -> float:
+    """Out-of-fold AUROC of a standardised logistic probe; folds are split by `groups` (e.g. passage) when given."""
     from sklearn.linear_model import LogisticRegression
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
-    rng = np.random.RandomState(seed); idx = rng.permutation(len(y)); out = np.zeros(len(y))
+    rng = np.random.RandomState(seed); out = np.zeros(len(y))
+    if groups is None:
+        groups = np.arange(len(y))
+    ug = rng.permutation(np.unique(groups)); gfold = {g: i % folds for i, g in enumerate(ug)}
+    fold_of = np.array([gfold[g] for g in groups])
     for f in range(folds):
-        te = idx[f::folds]; tr = np.setdiff1d(idx, te)
+        te = np.where(fold_of == f)[0]; tr = np.where(fold_of != f)[0]
         clf = make_pipeline(StandardScaler(), LogisticRegression(C=0.05, max_iter=3000))
         clf.fit(X[tr], y[tr]); out[te] = clf.predict_proba(X[te])[:, 1]
     pos, neg = out[y == 1], out[y == 0]
@@ -74,17 +83,18 @@ def main(argv=None) -> None:
     proj = (MLPProjector.load if (Path(a.projector) / "mlp.safetensors").exists() else RidgeProjector.load)(a.projector, dev)
     enc = QAEncoder(tok); layers = [int(x) for x in a.layers.split(",")]
     se = {r["i"]: r["se"] for r in (json.loads(l) for l in open(a.se) if l.strip())}
-    feats = {k: [] for k in ("raw", "mapped", "receiver", "text")}; ses = []
+    feats = {k: [] for k in ("raw", "mapped", "mapped+q", "receiver", "text", "question")}; ses = []; groups = []
     for i, line in enumerate(open(a.data)):
         if i >= a.n or i not in se:
             continue
-        f = features(src, tgt, proj, enc, json.loads(line), a.variant, layers)
+        ex = json.loads(line)
+        f = features(src, tgt, proj, enc, ex, a.variant, layers)
         for k in feats:
             feats[k].append(f[k])
-        ses.append(se[i])
-    y = (np.array(ses) > np.median(ses)).astype(int)
-    res = {"variant": a.variant, "n": int(len(y)), "positive_rate": float(y.mean()),
-           "auroc": {k: probe_auroc(np.stack(v).astype(np.float32), y) for k, v in feats.items()},
+        ses.append(se[i]); groups.append(hash(ex.get("clean", ex.get("context", ""))[:200]))
+    y = (np.array(ses) > np.median(ses)).astype(int); groups = np.array(groups)
+    res = {"variant": a.variant, "n": int(len(y)), "positive_rate": float(y.mean()), "n_groups": int(len(set(groups.tolist()))),
+           "auroc": {k: probe_auroc(np.stack(v).astype(np.float32), y, groups=groups) for k, v in feats.items()},
            "dims": {k: int(np.stack(v).shape[1]) for k, v in feats.items()}}
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=1)); print(json.dumps(res))
