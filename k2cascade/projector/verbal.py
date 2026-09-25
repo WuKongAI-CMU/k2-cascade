@@ -22,6 +22,13 @@ def attach(rows: list[dict], se_rows: dict[int, dict], mode: str = "words") -> l
             labels = r["labels"]; k = len(labels) - 1
             agree = sum(1 for l in labels[:k] if l == labels[-1]) / max(k, 1)
             conf = f"{agree:.1f}"
+        elif mode == "candidates":  # structured text: every answer cluster with its sampled frequency
+            labels, answers = r["labels"], r["answers"]; k = len(labels) - 1
+            from collections import Counter, OrderedDict
+            cnt = Counter(labels[:k]); rep = OrderedDict()
+            for a, l in zip(answers[:k], labels[:k]):
+                rep.setdefault(l, a)
+            conf = "cands:" + "; ".join(f"{rep[l]} ({cnt[l] / k:.1f})" for l, _ in cnt.most_common())
         else:
             conf = "high" if r["se"] <= lo else ("medium" if r["se"] <= hi else "low")
         out.append({**ex, "sender_answer": r["greedy"], "sender_se": r["se"], "sender_conf": conf})
@@ -32,7 +39,7 @@ def main(argv=None) -> None:
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", required=True); ap.add_argument("--se", required=True); ap.add_argument("--out", required=True)
-    ap.add_argument("--mode", default="words", choices=("words", "numeric"))
+    ap.add_argument("--mode", default="words", choices=("words", "numeric", "candidates"))
     a = ap.parse_args(argv)
     rows = [json.loads(l) for l in open(a.data) if l.strip()]
     se = {r["i"]: r for r in (json.loads(l) for l in open(a.se) if l.strip())}

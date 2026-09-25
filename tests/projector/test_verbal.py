@@ -13,3 +13,10 @@ def test_attach_numeric_uses_agreement_with_greedy():
     rows = [{"question": "q"}]
     se = {0: {"i": 0, "se": 0.5, "greedy": "a", "labels": [0, 0, 1, 0, 0]}}  # 4 samples, 3 agree with greedy (label 0)
     assert attach(rows, se, "numeric")[0]["sender_conf"] == "0.8"
+
+
+def test_attach_candidates_lists_clusters_with_frequencies():
+    rows = [{"question": "q"}]
+    se = {0: {"i": 0, "se": 0.5, "greedy": "a", "answers": ["a", "b", "a", "a", "a"], "labels": [0, 1, 0, 0, 0]}}
+    c = attach(rows, se, "candidates")[0]["sender_conf"]
+    assert c.startswith("cands:") and "a (0.8)" in c and "b (0.2)" in c

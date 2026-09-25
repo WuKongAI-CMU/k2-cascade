@@ -65,7 +65,9 @@ class QAEncoder:
         """Receiver-side text: optionally its own passage (the different-context setting) or the sender's verbal
         handoff (answer + confidence word), then the question."""
         own = f"\n\nPassage: {receiver_ctx.strip()}" if receiver_ctx else ""
-        if verbal:
+        if verbal and verbal[1].startswith("cands:"):
+            own += f"\n\nA smaller model that read the passage gives these candidate answers with its probabilities: {verbal[1][6:]}."
+        elif verbal:
             own += f"\n\nA smaller model that read the passage answered: {verbal[0].strip()} (confidence: {verbal[1]})."
         return self.tok(f"{own}\n\nQuestion: {q.strip()}\nAnswer:", add_special_tokens=False)["input_ids"]
 
