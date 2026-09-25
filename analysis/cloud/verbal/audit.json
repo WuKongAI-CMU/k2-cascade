@@ -79,5 +79,63 @@
    -0.09090909090909094,
    -0.0015452606854776674
   ]
+ },
+ "within_item_removed": {
+  "n": 377,
+  "sender_mean_delta_se": 0.9838642430655976,
+  "none": {
+   "spearman_delta": NaN,
+   "mean_delta_entropy": 0.0,
+   "same_sign": 0.08488063660477453
+  },
+  "text": {
+   "spearman_delta": 0.3223608749752983,
+   "mean_delta_entropy": 1.887867376979055,
+   "same_sign": 0.896551724137931
+  },
+  "verbal": {
+   "spearman_delta": 0.14569554150943512,
+   "mean_delta_entropy": -0.08095279984195922,
+   "same_sign": 0.4880636604774536
+  },
+  "project": {
+   "spearman_delta": 0.28004714996056235,
+   "mean_delta_entropy": 1.3793004666818232,
+   "same_sign": 0.8753315649867374
+  },
+  "derange": {
+   "spearman_delta": 0.0037075591076953258,
+   "mean_delta_entropy": 0.002363234046915798,
+   "same_sign": 0.47480106100795755
+  }
+ },
+ "within_item_contradicted": {
+  "n": 377,
+  "sender_mean_delta_se": 0.20907394356120418,
+  "none": {
+   "spearman_delta": NaN,
+   "mean_delta_entropy": 0.0,
+   "same_sign": 0.3925729442970822
+  },
+  "text": {
+   "spearman_delta": 0.3246158835030223,
+   "mean_delta_entropy": 0.14060531051666414,
+   "same_sign": 0.6816976127320955
+  },
+  "verbal": {
+   "spearman_delta": 0.17870767490032913,
+   "mean_delta_entropy": 0.010049451883655011,
+   "same_sign": 0.5888594164456233
+  },
+  "project": {
+   "spearman_delta": 0.2082190378019114,
+   "mean_delta_entropy": -0.1556356410033981,
+   "same_sign": 0.5145888594164456
+  },
+  "derange": {
+   "spearman_delta": 0.0036302192792247437,
+   "mean_delta_entropy": -0.0036175445473162504,
+   "same_sign": 0.4827586206896552
+  }
  }
 }

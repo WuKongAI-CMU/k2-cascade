@@ -69,9 +69,29 @@ def main(argv=None) -> None:
                 lo, hi = grouped_boot_diff(ks, groups, ent["project"], ent[b], y)
                 r[f"ci_project_minus_{b}"] = [lo, hi]
         res[v] = r
+    # within-item intervention (sixth review): same question, the sender's passage changes clean -> removed /
+    # contradicted. Does the receiver's entropy change track the *sender's* semantic-entropy change, per item?
+    from .confidence import spearman
+    se_c = load_items(f"{a.se}/se_clean.jsonl")
+    for v in ("removed", "contradicted"):
+        se_v = load_items(f"{a.se}/se_{v}.jsonl")
+        ks = [i for i in keep if i in se_c and i in se_v and i in items[v] and i in items["clean"]]
+        d_send = [se_v[i]["se"] - se_c[i]["se"] for i in ks]
+        arms = [x for x in items[v][ks[0]] if isinstance(items[v][ks[0]][x], dict)]
+        w = {"n": len(ks), "sender_mean_delta_se": sum(d_send) / len(d_send)}
+        for x in arms:
+            d_rec = [items[v][i][x]["entropy"] - items["clean"][i][x]["entropy"] for i in ks]
+            same_sign = sum(1 for a_, b_ in zip(d_send, d_rec) if (a_ > 0) == (b_ > 0)) / len(ks)
+            w[x] = {"spearman_delta": spearman(d_send, d_rec), "mean_delta_entropy": sum(d_rec) / len(d_rec), "same_sign": same_sign}
+        res[f"within_item_{v}"] = w
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=1))
+    for v in ("removed", "contradicted"):
+        w = res[f"within_item_{v}"]
+        print(f"within-item clean->{v}: n {w['n']} sender dSE {w['sender_mean_delta_se']:.2f} | " + " ".join(
+            f"{x}: rho {w[x]['spearman_delta']:.3f} dH {w[x]['mean_delta_entropy']:.2f} sign {w[x]['same_sign']:.2f}" for x in w if isinstance(w[x], dict)))
     for v, r in res.items():
+        if v.startswith("within"): continue
         print(v, "n", r["n"], "passages", r["n_passages"], "distinct SE", r["distinct_se_values"],
               "| label AUROC words %.3f numeric %.3f" % (r["label_auroc_words"], r["label_auroc_numeric"]),
               "| arms", {k: round(x, 3) for k, x in r["auroc"].items()},
