@@ -67,3 +67,14 @@ Repos to read: thu-nics/C2C projector.py, OATML/semantic-entropy-probes, markli4
 7. Cite Dense Latent Communication (2606.13594, context-aware vs unaware), CacheBridge (attention-sensitive
    error), LACO (identity confusion; latency ≠ bytes); StateBridge is homogeneous-only.
 8. Same-source baseline for the next paper: the same probe-extracted number sent as text vs as a soft prefix.
+
+## Sixth external review (2026-09-25): FOREWARN → UPS chain; within-item intervention
+- Done today: within-item test (same question, sender's passage clean→removed). Receiver entropy change vs
+  sender SE change: cache rho .280 / same-sign 88%; text .322 / 90%; verbal .146 / 49%; deranged cache .004 /
+  47%; question-only 0 by construction. The common-cause objection (hard questions make both uncertain) is
+  answered: the deranged cache shares the question and shows no tracking.
+- Next paper: the "single outcome vs distribution" axis (FOREWARN passes only the most likely future);
+  UPS (CMU-IntentLab, RSS 2026) assumes the world model is right — the interface-loss row is ours to test; its
+  repo (NutAssembly env, conformal verifier) is a reuse target and a CMU collaboration target for IROS week.
+- Decision-loss bound: TV(b, b̃) ≤ ε ⇒ one-step regret ≤ 2 R_max ε — a modest, correct replacement for the
+  theory box's deleted deduction.
