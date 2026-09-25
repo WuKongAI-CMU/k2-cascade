@@ -36,7 +36,7 @@ def attach(rows: list[dict], se_rows: dict[int, dict], mode: str = "words") -> l
         cnt = Counter(labels[:kk]); rep = {}
         for a_, l in zip(answers[:kk], labels[:kk]):
             rep.setdefault(l, a_)
-        cands = [[rep[l], c / kk] for l, c in cnt.most_common()] if labels else []
+        cands = [[rep[l], c / kk] for l, c in cnt.most_common() if l in rep] if (labels and answers) else []
         out.append({**ex, "sender_answer": r["greedy"], "sender_se": r["se"], "sender_conf": conf, "sender_cands": cands})
     return out
 
