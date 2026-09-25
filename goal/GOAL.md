@@ -3,6 +3,20 @@
 The ladder has four rungs. Each rung is judged only by the rung below it; the top rung is never "done".
 
 ## North star (decade): the agent economy runs on state, not text
+
+Four sentences (2026-09-25), from most to least certain:
+1. The unit of computation is moving from one model to a population of models (routing, cascades, agents,
+   speculative decoding). Their protocol is still text — human-readable by inertia, not by design.
+2. The next protocol is state. Three things text cannot carry: the computation already done, the shape of a
+   belief (which alternatives), and intermediate representations that are not words. Inside robots this already
+   exists (Helix, GR00T); across independent models it does not. We are building the earliest version.
+3. Once state can be handed off there is an economy: state has cost (bytes, latency), value (reuse, accuracy)
+   and fraud (confident wrong state). Cost, value, fraud → price, reputation, audit. Our three pieces are the
+   three primitives: the channel, uncertainty that travels with it, accuracy per dollar.
+4. (bet) Self-improving systems will not be one model getting stronger but a population handing state to each
+   other and learning from what comes back. Knowing you cannot (the probe) and handing off state (the channel)
+   are the first two steps of that loop.
+
 Populations of models that trade work with each other and improve from it: an agent knows what it cannot do,
 hands its *state* (not a transcript) to a stronger or more specialised one, pays for it, and learns from what
 comes back. Three things such an economy needs that nobody has: a channel for state between different models
