@@ -510,6 +510,100 @@ def fig_policy() -> None:
     save(fig, "fig_policy")
 
 
+# --------------------------------------------------------------------------- (j)
+def fig_audit() -> None:
+    """Left: receiver-level AUROC (the receiver's first-token entropy against
+    the sender's semantic-entropy target) for six handoffs per passage variant,
+    with the message-level AUROC of the label itself drawn as a hollow marker
+    above the word and number arms.  Right: within-item intervention (same
+    question, sender's passage clean -> removed / contradicted): Spearman of
+    the receiver's entropy change against the sender's semantic-entropy change,
+    annotated with the same-sign rate.  All numbers from verbal/audit.json,
+    night_a/confidence_numeric.json and night_a/confidence_candidates.json."""
+    with open(DATA / "verbal" / "audit.json") as f:
+        A = json.load(f)
+    with open(DATA / "night_a" / "confidence_numeric.json") as f:
+        NUM = json.load(f)
+    with open(DATA / "night_a" / "confidence_candidates.json") as f:
+        CAND = json.load(f)
+    variants = ["clean", "contradicted", "removed"]
+    for v in variants:  # shared arms must agree across runs
+        for arm in ("none", "text", "project"):
+            assert abs(A[v]["auroc"][arm] - NUM["sender_tracking"][v][f"auroc_{arm}"]) < 1e-9
+            assert abs(A[v]["auroc"][arm] - CAND["sender_tracking"][v][f"auroc_{arm}"]) < 1e-9
+    arms = [
+        ("question only", lambda v: A[v]["auroc"]["none"], C["grey"]),
+        ("answer + confidence word", lambda v: A[v]["auroc"]["verbal"], C["green"]),
+        ("answer + number", lambda v: NUM["sender_tracking"][v]["auroc_verbal"], C["sky"]),
+        ("all candidates + probabilities", lambda v: CAND["sender_tracking"][v]["auroc_verbal"], C["yellow"]),
+        ("mapped cache", lambda v: A[v]["auroc"]["project"], C["blue"]),
+        ("passage as text", lambda v: A[v]["auroc"]["text"], C["black"]),
+    ]
+    label_of = {1: "label_auroc_words", 2: "label_auroc_numeric"}
+
+    fig, (axl, axr) = plt.subplots(
+        1, 2, figsize=(DOUBLE, 2.35), gridspec_kw={"wspace": 0.25, "width_ratios": [1.7, 1]}
+    )
+    n = len(arms)
+    w = 0.8 / n
+    x = np.arange(len(variants))
+    for i, (label, get, col) in enumerate(arms):
+        ys = [get(v) for v in variants]
+        xs = x + (i - (n - 1) / 2) * w
+        bars = axl.bar(xs, ys, w, color=col, label=label, zorder=2)
+        for b, y in zip(bars, ys):
+            axl.text(b.get_x() + b.get_width() / 2, y + 0.006, f"{y:.2f}".lstrip("0"),
+                     ha="center", va="bottom", fontsize=5.2, rotation=90, zorder=3)
+        if i in label_of:
+            ls = [A[v][label_of[i]] for v in variants]
+            axl.plot(xs, ls, ls="none", marker="o", mfc="white", mec=col, mew=1.0, ms=4.2,
+                     zorder=4, label=None)
+            for xx, y0, y1 in zip(xs, ys, ls):
+                axl.plot([xx, xx], [y0 + 0.05, y1 - 0.012], ls=":", lw=0.7, color=col, zorder=1)
+                axl.text(xx, y1 + 0.012, f"{y1:.2f}".lstrip("0") if y1 < 1 else "1.00",
+                         ha="center", va="bottom", fontsize=5.2, color=col)
+    axl.plot([], [], ls="none", marker="o", mfc="white", mec=C["black"], ms=4.2,
+             label="the label itself, scored directly (no receiver)")
+    axl.axhline(0.5, ls="--", lw=0.8, color=C["grey"], zorder=0)
+    axl.set_xticks(x)
+    axl.set_xticklabels(["clean", "contradicted", "answer removed"])
+    axl.set_ylabel("AUROC vs sender semantic entropy")
+    axl.set_ylim(0.4, 1.34)
+    axl.set_yticks([0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    axl.set_yticklabels(["0.4", "0.5\nchance", "0.6", "0.7", "0.8", "0.9", "1.0"])
+    axl.legend(loc="upper left", frameon=False, ncol=2, handlelength=1.2,
+               columnspacing=0.7, fontsize=5.9)
+    axl.set_title("receiver-level (bars) vs message-level (hollow) signal", fontsize=7.5)
+
+    # right: within-item intervention
+    keys = [("text", "text", C["black"]), ("project", "mapped\ncache", C["blue"]),
+            ("verbal", "conf.\nword", C["green"]), ("derange", "deranged\ncache", C["vermillion"])]
+    conds = [("within_item_removed", "answer removed", 1.0), ("within_item_contradicted", "contradicted", 0.45)]
+    xr = np.arange(len(keys))
+    wr = 0.38
+    for j, (ck, clabel, alpha) in enumerate(conds):
+        rho = [A[ck][k]["spearman_delta"] for k, _, _ in keys]
+        ss = [A[ck][k]["same_sign"] for k, _, _ in keys]
+        cols = [c for _, _, c in keys]
+        bars = axr.bar(xr + (j - 0.5) * wr, rho, wr, color=cols, alpha=alpha,
+                       edgecolor=cols, linewidth=0.6, label=clabel, zorder=2)
+        for b, r, s in zip(bars, rho, ss):
+            axr.text(b.get_x() + b.get_width() / 2, r + 0.008,
+                     f"{r:.2f}".lstrip("0").replace("-0", "-") + f"\n{100*s:.0f}%",
+                     ha="center", va="bottom", fontsize=5.2)
+    axr.axhline(0, lw=0.6, color=C["black"], zorder=1)
+    axr.set_xticks(xr)
+    axr.set_xticklabels([lab for _, lab, _ in keys], fontsize=7)
+    axr.set_ylabel("Spearman, receiver vs sender change")
+    axr.set_ylim(-0.03, 0.5)
+    axr.set_title("within-item: same question, sender's passage changed", fontsize=7.5)
+    from matplotlib.patches import Patch
+    axr.legend(handles=[Patch(facecolor=C["grey"], alpha=1.0, label="clean to answer removed (same-sign %)"),
+                        Patch(facecolor=C["grey"], alpha=0.45, label="clean to contradicted")],
+               loc="upper right", frameon=False, fontsize=5.9, handlelength=1.2)
+    save(fig, "fig_audit")
+
+
 if __name__ == "__main__":
     fig_arms()
     fig_layers()
@@ -520,3 +614,4 @@ if __name__ == "__main__":
     fig_pairs()
     fig_cost()
     fig_policy()
+    fig_audit()
