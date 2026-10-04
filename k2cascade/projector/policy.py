@@ -1,7 +1,7 @@
 """Milestone 4: accuracy-vs-cost curves for handoff policies.
 
 Inputs: the sender npz from cascade.py and qa.py per-item files for the receiver arms (text, project, verbal).
-Triggers: a logistic probe on the sender's hidden state (nested 5-fold), max-prob, semantic entropy, sample
+Triggers: a logistic probe on the sender's hidden state (five-fold), max-prob, semantic entropy, sample
 agreement, random, and the oracle (hand off exactly the items the sender gets wrong).
 For each trigger and handoff rate r, the policy hands off the r fraction of items the trigger ranks most likely
 to fail; accuracy = mean F1 of the chosen answers; cost = c_small + r * c_handoff (per item, in the chosen unit).
