@@ -1,5 +1,7 @@
 # Goal log (one entry per review; newest first)
 
+## 2026-10-07 — program adopted: Part IV of docs/thesis/thesis.tex is the program; two rival programs (belief-preserving interfaces; compact state messages) not chosen, one paragraph each grafted; Quarter rung rewritten to program chapters 1–2 plus arXiv/ICML dates.
+
 ## 2026-09-25 — six external reviews absorbed; experiments closed at 23 blocks
 Retracted: the theory-box deduction (label carries the signal at AUROC .95; the receiver does not read it).
 Added: structured-text baseline (cache still ahead on 2 of 3 variants), passage-grouped CIs (significant on

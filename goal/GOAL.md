@@ -27,18 +27,38 @@ are necessary and testable at our scale, and that the papers come out of the sam
 
 ## 12-month line (to 2027-09): state channels that carry uncertainty
 Already set in docs/goal-2026-09-21.md; status 2026-09-24: milestone 1 done (channel exists, 4 pairs, controls),
-milestone 2 done (SQuAD, HotpotQA different-context, compression), milestone 3 half done (uncertainty survives
-attenuated; cache beats a verbal confidence word; two training fixes tried, second running). Milestone 4
+milestone 2 done (SQuAD, HotpotQA different-context, compression), milestone 3 run and its pre-registered proceed
+criterion missed (docs/design-confidence-2026-09-22.md asked for cache-arm AUROC ≥ .70; measured .585 / .605 / .624;
+the drop-ratio condition passed at .54), so the design document's fallback reading holds: content transfers,
+uncertainty does not; cache > verbal word is SUGGESTED, not SHOWN; two training fixes tried, neither moved it
+(thesis ch. "Uncertainty", paragraph "The pre-registered criterion was missed", 2026-10-07). Milestone 4
 (handoff policy, accuracy per dollar) not started.
 
 ## Quarter (to 2026-12-31)
-1. arXiv v1 by 2026-10-01; ICML 2027 submission 2027-01-28.
-2. Milestone 3 closed: a projector that keeps ≥ 80% of the sender's confidence drop, or a proof that the
-   receiver-side objective cannot (then the fix moves to the sender).
-3. Milestone 4 started: probe + channel cascade on one real task, three baselines, accuracy per dollar.
-4. One thing that feeds the north star directly: state as a tradable good. Price a handoff (bytes × latency ×
-   accuracy gained) and show a two-agent market where buying the small agent's state beats buying its text at
-   the same price. Pilot only; the design doc precedes any run.
+Rewritten 2026-10-07 when Part IV of docs/thesis/thesis.tex was adopted as the program. The quarter is the
+first two program chapters, each with the kill written there, plus the two outward dates.
+1. Dates: arXiv v1 (was due 2026-10-01; still the first outward item, Peter's button); ICML 2027 submission
+   2027-01-28 (goal/LOG.md 09-25 named COLM 2027 first choice; the thesis records the disagreement; this
+   file keeps ICML until Peter picks).
+2. Program chapter 1 — the pre-action probe (thesis ch. "Knowing you cannot"). Done: AUROC .749 on 600 SQuAD
+   items vs semantic entropy .689; .876 [.813, .944] on 127 agent steps vs metadata .704. This quarter:
+   train on SQuAD clean, test on HotpotQA partitioned and the agent steps without refitting; split failures
+   into information-missing (removed variant) vs capability-missing (clean but wrong), per-split AUROC with
+   passage-grouped folds. Eval-only on cached states. Kill: off-distribution AUROC ≤ .69 on the same items,
+   or the two kinds not separable (per-split AUROCs inside each other's interval) → the trigger is a
+   within-dataset shortcut and later chapters use semantic entropy as the trigger.
+3. Program chapter 2 — the channel and a priced catalogue (thesis ch. "The channel"). Done: binding 63.0%
+   (chance 12.5, deranged 4.6, deranged-sender projector 23.4), SQuAD 53.0 vs 54.7 text, HotpotQA 39.9 ± 2.1
+   vs 45.8, Qwen3-4B 71.7 ± 4.5, 0.9B 17.0 (fails). This quarter: the week-1 no-GPU diagnostic (attention-
+   output similarity and KV R² on the 20 existing compression rows, rank-correlated with SQuAD F1); the
+   catalogue's four columns defined (bytes/token, latency vs re-prefill, binding with derange, audit AUROC);
+   the learned-codec block priced before it runs (slots {16, 64, 256}, packed int4, wire bytes). Kill:
+   geometry/vocabulary features do not predict transfer above a shuffled baseline → "transfer is a property
+   of the triple" is dropped; nothing ≤ 1 MB per message keeps SQuAD F1 within 5 of text with the derange arm
+   near chance → the channel stays a measurement instrument.
+Order of runs is the thesis's "order of the kills": instruction-tuned receiver on the word arm and the three
+projector seeds through the confidence protocol come first (block 1), because only they can change the
+arXiv abstract. Standing allowance $500 total; codec training is quoted to Peter before it starts.
 
 ## Week (rolling; rewritten every Monday)
 Week of 2026-09-22: all twelve experiment blocks run; paper v2 compiled (abstract tightened); overnight:
