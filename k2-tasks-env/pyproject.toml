@@ -7,6 +7,7 @@ dependencies = ["pytest>=8"]
 
 [project.optional-dependencies]
 verifiers = ["verifiers>=0.3", "datasets"]
+openenv = ["openenv-core>=0.3", "fastapi", "httpx"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

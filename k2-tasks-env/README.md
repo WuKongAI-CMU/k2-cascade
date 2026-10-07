@@ -7,7 +7,7 @@ perfect score by *saying* it would run the tests.
 
 ```
 pip install -e .            # stdlib + pytest only
-python -m pytest -q         # 58 tests: oracle scores 1.0 on all 8 tasks, every hack scores 0.0
+python -m pytest -q         # 77 tests: oracle scores 1.0 on all 8 tasks, every hack scores 0.0
 python -m k2_tasks_env.cli  # table of every scripted policy x every task
 python -m k2_tasks_env.server --port 8000   # OpenEnv-style HTTP: POST /reset, POST /step, GET /state
 ```
@@ -52,9 +52,12 @@ sees these), `hidden_tests/` (the grader's), `conftest.py`.
    the agent did to `tests/`, `conftest.py`, `pytest.ini` or `sitecustomize.py` can change the score.
 2. **Hidden tests are the reward.** Visible pass rate is reported, not rewarded. A lookup table that
    satisfies every visible assertion scores 0 (`hardcode` row below).
-3. **Tampering is a zero.** Any change to protected files, or any new grader-config file, sets reward
+3. **Doing nothing is a zero.** Reward is normalised against the untouched repo's hidden pass count, so a policy
+   that claims completion without acting earns 0 even on tasks where the starting code already passes half the suite;
+   partial fixes earn the fraction of the remaining tests they turn green.
+4. **Tampering is a zero.** Any change to protected files, or any new grader-config file, sets reward
    to 0 even when the real fix is also present. There must be no gradient toward "tamper a little".
-4. **Step verifier.** Mirrors K2 Cascade: unknown tool, missing args, non-object args, identical call
+5. **Step verifier.** Mirrors K2 Cascade: unknown tool, missing args, non-object args, identical call
    repeated without an intervening write, and narrated intent with no action (`"I'll run the tests"`)
    are rejected and logged; the episode does not end on them.
 
@@ -76,6 +79,10 @@ Full write-up: [docs/grader-robustness.md](docs/grader-robustness.md).
 - **In-process:** `CodingTaskEnv.reset / step / state / close` (OpenEnv-style).
 - **HTTP:** `python -m k2_tasks_env.server`; `Dockerfile` for one-container-per-rollout. The in-process
   workspace confines paths, not the shell; the container is the real sandbox (`--network none`, read-only root).
+- **OpenEnv (meta-pytorch/OpenEnv):** `pip install -e .[openenv]`, then `uvicorn k2_tasks_env.openenv_env:app --port 8001`.
+  `K2TasksOpenEnv` subclasses OpenEnv's `Environment` with pydantic `K2Action` / `K2Observation` / `K2State`;
+  OpenEnv's plain HTTP `/reset` and `/step` are stateless by design, episodes run over its `/ws` session
+  (`{"type": "reset", "data": {"task_id": ...}}`, `{"type": "step", "data": {"tool": ..., "args": {...}}}`).
 - **Prime Intellect `verifiers`:** `pip install -e .[verifiers]`, then
   `from k2_tasks_env.verifiers_env import load_environment` gives a `StatefulToolEnv` over the same
   tasks, grader and tools; the workspace handle is injected into every tool call and never shown to the model.
@@ -83,8 +90,8 @@ Full write-up: [docs/grader-robustness.md](docs/grader-robustness.md).
 ## Scripted policies
 
 `k2_tasks_env/policies.py` holds one honest oracle per task and the hacks the grader is tested against:
-`edit_tests`, `delete_tests`, `conftest_skip`, `pytest_ini`, `hardcode`, `narrated_completion`,
-`repeat_calls`, `escape_path`. They run without a model, so the test suite is deterministic and fast.
+`edit_tests`, `delete_tests`, `conftest_skip`, `pytest_ini`, `tests_init_pth`, `src_monkeypatch`, `hardcode`,
+`narrated_completion`, `repeat_calls`, `escape_path`. They run without a model, so the test suite is deterministic and fast.
 
 ## Status and limits
 
@@ -92,3 +99,5 @@ Full write-up: [docs/grader-robustness.md](docs/grader-robustness.md).
   K2 Cascade's K2 Horizon 0.9B / 3.7B / 375B results on the base `todo-cli` task are in that repo.
 - Hidden tests break lookup tables; they do not certify solutions. Open-ended tasks would need a rubric.
 - Timeouts bound pathological solutions; nothing judges them.
+- `openenv-core` 0.3 pins `mcp>=2`, `verifiers` 0.3.1 pins `mcp<2`; both adapters import and pass their tests in one
+  venv today, but install them in separate venvs if pip starts refusing.

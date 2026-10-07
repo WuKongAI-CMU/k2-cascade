@@ -5,6 +5,7 @@ import hashlib
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -73,7 +74,10 @@ class Workspace:
     def execute(self, name: str, args: dict[str, Any], timeout: int = 60) -> str:
         try:
             if name == "shell":
-                env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "HOME": str(self.root)}
+                # `python` / `pytest` inside the workspace must resolve to the interpreter running the env,
+                # otherwise an agent on a machine whose system python lacks pytest cannot run the tests.
+                env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "HOME": str(self.root),
+                       "PATH": os.path.dirname(sys.executable) + os.pathsep + os.environ.get("PATH", "")}
                 r = subprocess.run(["bash", "-lc", str(args["cmd"])], cwd=self.root, capture_output=True, text=True, timeout=timeout, env=env)
                 return _trunc((r.stdout or "") + (r.stderr or "")) + f"\n[exit {r.returncode}]"
             if name == "read_file":
