@@ -1,0 +1,102 @@
+\begin{thebibliography}{14}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Cheng et~al.(2026)Cheng, Das, and Ramnath]{2608.04893}
+Jiaming Cheng, Subhransu Das, and Rajiv Ramnath.
+\newblock When does latent communication pay? a causal audit of relayed {KV}
+  caches in multi-agent {LLM}s.
+\newblock \emph{arXiv preprint arXiv:2608.04893}, 2026.
+
+\bibitem[Cui and Pei(2026)]{2601.18909}
+Ziyao Cui and Jian Pei.
+\newblock How is uncertainty propagated in knowledge distillation?
+\newblock \emph{arXiv preprint arXiv:2601.18909}, 2026.
+
+\bibitem[Darcet et~al.(2024)Darcet, Oquab, Mairal, and
+  Bojanowski]{darcet2024registers}
+Timoth{\'e}e Darcet, Maxime Oquab, Julien Mairal, and Piotr Bojanowski.
+\newblock Vision transformers need registers.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2024.
+
+\bibitem[Farquhar et~al.(2024)Farquhar, Kossen, Kuhn, and
+  Gal]{farquhar2024detecting}
+Sebastian Farquhar, Jannik Kossen, Lorenz Kuhn, and Yarin Gal.
+\newblock Detecting hallucinations in large language models using semantic
+  entropy.
+\newblock \emph{Nature}, 630:\penalty0 625--630, 2024.
+
+\bibitem[Gonuguntla(2026)]{2608.08239}
+Ashritha Gonuguntla.
+\newblock The replay gap: Static evaluation of model switching in {LLM} agents
+  scores the wrong world.
+\newblock \emph{arXiv preprint arXiv:2608.08239}, 2026.
+
+\bibitem[Heo et~al.(2026)Heo, Shafipour, Zhao, Golub, Kamani, Borkar, Chandran,
+  Zardoshti, and Rouhani]{2608.03893}
+Taekyung Heo, Rasoul Shafipour, Ritchie Zhao, Maximilian Golub, Mohammad~Mahdi
+  Kamani, Ritika Borkar, Makesh~Tarun Chandran, Pantea Zardoshti, and
+  Bita~Darvish Rouhani.
+\newblock Cross-model {KV} cache transfer in {LLM} families: A closed-form
+  linear mapping for prefill reuse.
+\newblock \emph{arXiv preprint arXiv:2608.03893}, 2026.
+
+\bibitem[Kossen et~al.(2024)Kossen, Han, Razzak, Schut, Malik, and
+  Gal]{kossen2024sep}
+Jannik Kossen, Jiatong Han, Muhammed Razzak, Lisa Schut, Shreshth Malik, and
+  Yarin Gal.
+\newblock Semantic entropy probes: Robust and cheap hallucination detection in
+  {LLM}s.
+\newblock \emph{arXiv preprint arXiv:2406.15927}, 2024.
+
+\bibitem[Liu et~al.(2026)Liu, Li, Qiu, Kong, and Kalnis]{2608.20927}
+Ziwu Liu, Guozhong Li, Chen Qiu, Weiyang Kong, and Panos Kalnis.
+\newblock {MentorPulse}: Refreshing cross-model latent guidance for long-form
+  generation.
+\newblock \emph{arXiv preprint arXiv:2608.20927}, 2026.
+
+\bibitem[Longpre et~al.(2021)Longpre, Perisetla, Chen, Ramesh, DuBois, and
+  Singh]{longpre2021entity}
+Shayne Longpre, Kartik Perisetla, Anthony Chen, Nikhil Ramesh, Chris DuBois,
+  and Sameer Singh.
+\newblock Entity-based knowledge conflicts in question answering.
+\newblock In \emph{Proceedings of EMNLP}, 2021.
+\newblock arXiv:2109.05052.
+
+\bibitem[Orgad et~al.(2025)Orgad, Toker, Gekhman, et~al.]{orgad2025know}
+Hadas Orgad, Michael Toker, Zorik Gekhman, et~al.
+\newblock {LLMs} know more than they show: On the intrinsic representation of
+  {LLM} hallucinations.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2025.
+\newblock arXiv:2410.02707.
+
+\bibitem[Rossi et~al.(2026)Rossi, Raghunath, and Wu]{2605.22863}
+Maximillian Rossi, Prajwal Raghunath, and Eugene Wu.
+\newblock Latent cache flow: Model-to-model communication without text.
+\newblock \emph{arXiv preprint arXiv:2605.22863}, 2026.
+
+\bibitem[Shi et~al.(2026)Shi, Zhang, Bao, Nelson, and Ye]{2606.20662}
+Kaiwen Shi, Zheyuan Zhang, Han Bao, Colby Nelson, and Yanfang Ye.
+\newblock Confidence laundering in agent systems: Why uncertainty needs a
+  latent carrier.
+\newblock \emph{arXiv preprint arXiv:2606.20662}, 2026.
+
+\bibitem[Xie et~al.(2024)Xie, Zhang, Chen, Lou, and Su]{xie2023adaptive}
+Jian Xie, Kai Zhang, Jiangjie Chen, Renze Lou, and Yu~Su.
+\newblock Adaptive chameleon or stubborn sloth: Revealing the behavior of large
+  language models in knowledge conflicts.
+\newblock In \emph{Proceedings of ICLR}, 2024.
+\newblock arXiv:2305.13300.
+
+\bibitem[Zhang and Emu(2026)]{2607.26773}
+Huixiang Zhang and Mahzabeen Emu.
+\newblock Do latent channels actually communicate? a causal audit of latent
+  multi-agent {LLM}.
+\newblock \emph{arXiv preprint arXiv:2607.26773}, 2026.
+
+\end{thebibliography}
