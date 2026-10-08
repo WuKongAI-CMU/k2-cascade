@@ -31,3 +31,15 @@ def test_squad_cases(source, target):
     out = squad_cases(source, target, identity_projector(target), QATok(), ex, k_top=3)
     v = out[0]["variants"]["clean"]
     assert set(v) >= {"passage", "text", "memory", "wrong_memory", "word", "question_only"} and len(v["memory"]["top"]) == 3
+
+
+def test_surgery_and_heads(source, target):
+    from k2cascade.projector.lens import fact_positions, head_patch, surgery
+    enc = Encoder(FakeTok(), 3, 4)
+    eps = make_episodes(5, 3, 4, seed=2)
+    vpos, npos = fact_positions(enc, eps[0])
+    assert len(vpos) == 3 and all(n == v - 2 for v, n in zip(vpos, npos))
+    s = surgery(target, target, identity_projector(target), enc, eps)
+    assert set(s) == {"value", "name", "other_value", "value_and_name"} and 0 <= s["value"]["p_own"] <= 1
+    h = head_patch(target, target, identity_projector(target), enc, eps, 2)
+    assert len(h["drop"]) == target.config.num_hidden_layers and len(h["drop"][0]) == target.config.num_key_value_heads

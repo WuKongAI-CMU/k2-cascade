@@ -127,6 +127,75 @@ def onset(src, tgt, projector, enc, eps):
     return {m: [{"layer": l, "acc": a / n, "follow": b / n} for l, (a, b) in enumerate(v)] for m, v in res.items()}
 
 
+def fact_positions(enc, e):
+    """Token positions of each name's value token and of the last token of each name, in name order."""
+    ids = enc.facts(e); vals = set(enc.colour_ids)
+    vpos = [i for i, t in enumerate(ids) if t in vals]
+    return vpos, [v - 2 for v in vpos]
+
+
+@torch.no_grad()
+def surgery(src, tgt, projector, enc, eps):
+    """Own memory with the partner's state written into one position at every layer: the queried value token,
+    the queried name's last token, or another fact's value token (control). P(own), P(partner), follow."""
+    dev = next(tgt.parameters()).device
+    vid = torch.tensor(enc.colour_ids, device=dev)
+    modes = ("value", "name", "other_value", "value_and_name")
+    res = {m: {"p_own": 0.0, "p_partner": 0.0, "acc": 0, "follow": 0} for m in modes}
+    for e in eps:
+        f = torch.tensor([enc.facts(e)], device=dev); pf = torch.tensor([enc.facts(eps[e.partner])], device=dev)
+        q = torch.tensor([enc.question(e)], device=dev)
+        ko, vo = mapped(src, projector, f); kp, vp = mapped(src, projector, pf)
+        vpos, npos = fact_positions(enc, e); other = (e.query + 1) % len(vpos)
+        own, par = e.answer, eps[e.partner].colours[e.query]
+        for m in modes:
+            pos = {"value": [vpos[e.query]], "name": [npos[e.query]], "other_value": [vpos[other]],
+                   "value_and_name": [vpos[e.query], npos[e.query]]}[m]
+            k = [x.clone() for x in ko]; v = [x.clone() for x in vo]
+            for j in range(len(k)):
+                for p_ in pos:
+                    k[j][:, :, p_] = kp[j][:, :, p_]; v[j][:, :, p_] = vp[j][:, :, p_]
+            lp, _ = forward_with_lens(tgt, q, _cache(tgt, k, v), f.shape[1], vid)
+            d = torch.softmax(lp[vid], -1); r = res[m]
+            r["p_own"] += d[own].item(); r["p_partner"] += d[par].item()
+            r["acc"] += int(d.argmax().item() == own); r["follow"] += int(d.argmax().item() == par)
+    n = len(eps)
+    return {m: {k: v / n for k, v in r.items()} for m, r in res.items()}
+
+
+@torch.no_grad()
+def head_patch(src, tgt, projector, enc, eps, n_eps=None):
+    """For every (layer, KV head): (a) own memory with the partner's in that one head -> drop in P(own);
+    (b) partner memory with own in that one head -> rise in P(own). Means over episodes."""
+    dev = next(tgt.parameters()).device
+    vid = torch.tensor(enc.colour_ids, device=dev)
+    L = tgt.config.num_hidden_layers
+    H = None; drop = None; rise = None; base_own = base_par = 0.0
+    for e in eps[: n_eps or len(eps)]:
+        f = torch.tensor([enc.facts(e)], device=dev); pf = torch.tensor([enc.facts(eps[e.partner])], device=dev)
+        q = torch.tensor([enc.question(e)], device=dev)
+        ko, vo = mapped(src, projector, f); kp, vp = mapped(src, projector, pf)
+        H = ko[0].shape[1]
+        if drop is None:
+            drop = [[0.0] * H for _ in range(L)]; rise = [[0.0] * H for _ in range(L)]
+        own = e.answer
+        def p_own(k, v):
+            lp, _ = forward_with_lens(tgt, q, _cache(tgt, k, v), f.shape[1], vid)
+            return torch.softmax(lp[vid], -1)[own].item()
+        po, pp_ = p_own(ko, vo), p_own(kp, vp); base_own += po; base_par += pp_
+        for j in range(L):
+            for h in range(H):
+                k = list(ko); v = list(vo)
+                kj = ko[j].clone(); vj = vo[j].clone(); kj[:, h] = kp[j][:, h]; vj[:, h] = vp[j][:, h]
+                k[j] = kj; v[j] = vj; drop[j][h] += po - p_own(k, v)
+                k = list(kp); v = list(vp)
+                kj = kp[j].clone(); vj = vp[j].clone(); kj[:, h] = ko[j][:, h]; vj[:, h] = vo[j][:, h]
+                k[j] = kj; v[j] = vj; rise[j][h] += p_own(k, v) - pp_
+    n = n_eps or len(eps)
+    return {"base_p_own": base_own / n, "base_p_own_partner_memory": base_par / n,
+            "drop": [[x / n for x in row] for row in drop], "rise": [[x / n for x in row] for row in rise]}
+
+
 @torch.no_grad()
 def squad_cases(src, tgt, projector, tok, rows, k_top: int = 5):
     from .qa import QAEncoder
@@ -150,12 +219,26 @@ def squad_cases(src, tgt, projector, tok, rows, k_top: int = 5):
                 arms["word"] = (torch.cat([torch.tensor([enc.bos], device=dev), qv], 1) if enc.bos else qv, None, 0)
             arms["question_only"] = (torch.cat([torch.tensor([enc.bos], device=dev), q], 1) if enc.bos else q, None, 0)
             vr = {"passage": ctx[:1200]}
+            import copy
             for a, (qq, c, pl) in arms.items():
+                cc = copy.deepcopy(c) if c is not None else None
                 t = qq.shape[1]; pos = torch.arange(pl, pl + t, device=dev)
-                logits = tgt(input_ids=qq, past_key_values=c, position_ids=pos[None], cache_position=pos, use_cache=c is not None).logits[0, -1].float()
-                pr = torch.softmax(logits, -1); top = pr.topk(k_top)
-                ent = float(-(pr * torch.log(pr.clamp_min(1e-30))).sum())
-                vr[a] = {"top": [[tok.decode([int(t_)]), round(float(p_), 4)] for p_, t_ in zip(top.values, top.indices)], "entropy": ent}
+                mo = tgt(input_ids=qq, past_key_values=cc, position_ids=pos[None], cache_position=pos, use_cache=True)
+                cc, cur = mo.past_key_values, pl + t
+                logits = mo.logits[0, -1].float(); first = None; greedy = []
+                for _step in range(10):
+                    pr = torch.softmax(logits, -1); nxt = int(pr.argmax())
+                    piece = tok.decode([nxt])
+                    if first is None and piece.strip():
+                        top = pr.topk(k_top); ent = float(-(pr * torch.log(pr.clamp_min(1e-30))).sum())
+                        first = {"top": [[tok.decode([int(t_)]), round(float(p_), 4)] for p_, t_ in zip(top.values, top.indices)], "entropy": ent}
+                    if "\n" in piece:
+                        break
+                    greedy.append(nxt)
+                    pp = torch.tensor([cur], device=dev)
+                    mo = tgt(input_ids=torch.tensor([[nxt]], device=dev), past_key_values=cc, position_ids=pp[None], cache_position=pp, use_cache=True)
+                    cc, cur, logits = mo.past_key_values, cur + 1, mo.logits[0, -1].float()
+                vr[a] = dict(first or {"top": [], "entropy": float("nan")}, greedy=tok.decode(greedy).strip())
             case["variants"][var] = vr
         out.append(case)
     return out
@@ -172,6 +255,8 @@ def main(argv=None) -> None:
     ap.add_argument("--episodes", type=int, default=200); ap.add_argument("--n_lens", type=int, default=40)
     ap.add_argument("--squad", default=None, help="jsonl with clean/removed variants and sender_* fields")
     ap.add_argument("--n_squad", type=int, default=24); ap.add_argument("--skip_binding", action="store_true")
+    ap.add_argument("--mechanism", action="store_true", help="memory surgery and head patching instead of the lens set")
+    ap.add_argument("--n_heads_eps", type=int, default=60)
     a = ap.parse_args(argv)
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     src, tgt, tok = load_models(TrainConfig(source=a.source, target=a.target), dev)
@@ -180,7 +265,10 @@ def main(argv=None) -> None:
     enc = Encoder(tok, 8, 8)
     eps = make_episodes(a.episodes, 8, 8, seed=7)
     o = Path(a.out); o.mkdir(parents=True, exist_ok=True)
-    if not a.skip_binding:
+    if a.mechanism:
+        (o / "surgery.json").write_text(json.dumps(surgery(src, tgt, proj, enc, eps), indent=1))
+        (o / "heads.json").write_text(json.dumps(head_patch(src, tgt, proj, enc, eps, a.n_heads_eps)))
+    elif not a.skip_binding:
         (o / "episodes.json").write_text(json.dumps(record_episodes(src, tgt, proj, enc, eps, a.n_lens)))
         (o / "blend.json").write_text(json.dumps(blend(src, tgt, proj, enc, eps, [round(x * 0.1, 1) for x in range(11)]), indent=1))
         (o / "onset.json").write_text(json.dumps(onset(src, tgt, proj, enc, eps), indent=1))
