@@ -1,9 +1,16 @@
-\begin{thebibliography}{26}
+\begin{thebibliography}{20}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[B{\'e}d{\'e}carrats et~al.(2018)B{\'e}d{\'e}carrats, Chen, Pearce,
+  Cai, and Glanzman]{bedecarrats2018rna}
+B{\'e}d{\'e}carrats, A., Chen, S., Pearce, K., Cai, D., and Glanzman, D.~L.
+\newblock {RNA} from trained \emph{Aplysia} can induce an epigenetic engram for
+  long-term sensitization in untrained \emph{Aplysia}.
+\newblock \emph{eNeuro}, 5\penalty0 (3), 2018.
 
 \bibitem[Chen et~al.(2026)Chen, Zhang, Wu, Tremblay, Blukis, Birchfield, Vidal,
   Velasquez, Liu, and Qu]{2606.13594}
@@ -18,11 +25,6 @@ Cheng, J., Das, S., and Ramnath, R.
 \newblock When does latent communication pay? a causal audit of relayed {KV}
   caches in multi-agent {LLM}s.
 \newblock \emph{arXiv preprint arXiv:2608.04893}, 2026.
-
-\bibitem[Cui \& Pei(2026)Cui and Pei]{2601.18909}
-Cui, Z. and Pei, J.
-\newblock How is uncertainty propagated in knowledge distillation?
-\newblock \emph{arXiv preprint arXiv:2601.18909}, 2026.
 
 \bibitem[Dery et~al.(2026)Dery, Yahav, Prior, Feng, Shen, and
   Szlam]{2601.06123}
@@ -52,12 +54,6 @@ Fu, T., Min, Z., Zhang, H., Yan, J., Dai, G., Ouyang, W., and Wang, Y.
 \newblock \emph{arXiv preprint arXiv:2510.03215}, 2025.
 \newblock ICLR 2026.
 
-\bibitem[Gonuguntla(2026)]{2608.08239}
-Gonuguntla, A.
-\newblock The replay gap: Static evaluation of model switching in {LLM} agents
-  scores the wrong world.
-\newblock \emph{arXiv preprint arXiv:2608.08239}, 2026.
-
 \bibitem[Heo et~al.(2026)Heo, Shafipour, Zhao, Golub, Kamani, Borkar, Chandran,
   Zardoshti, and Rouhani]{2608.03893}
 Heo, T., Shafipour, R., Zhao, R., Golub, M., Kamani, M.~M., Borkar, R.,
@@ -73,25 +69,6 @@ Kossen, J., Han, J., Razzak, M., Schut, L., Malik, S., and Gal, Y.
   {LLM}s.
 \newblock \emph{arXiv preprint arXiv:2406.15927}, 2024.
 
-\bibitem[Li et~al.(2026)Li, Jiang, Zhao, and Li]{2608.30963}
-Li, Y., Jiang, D., Zhao, Y., and Li, B.
-\newblock A universal context-reuse layer for cross-model {KV} sharing.
-\newblock \emph{arXiv preprint arXiv:2608.30963}, 2026.
-
-\bibitem[Liu et~al.(2026{\natexlab{a}})Liu, Zhang, Jia, Kan, and
-  Wang]{2608.20617}
-Liu, J., Zhang, Q., Jia, Y., Kan, Z., and Wang, S.
-\newblock Dual-cache latent space communication between heterogeneous language
-  models.
-\newblock \emph{arXiv preprint arXiv:2608.20617}, 2026{\natexlab{a}}.
-
-\bibitem[Liu et~al.(2026{\natexlab{b}})Liu, Li, Qiu, Kong, and
-  Kalnis]{2608.20927}
-Liu, Z., Li, G., Qiu, C., Kong, W., and Kalnis, P.
-\newblock {MentorPulse}: Refreshing cross-model latent guidance for long-form
-  generation.
-\newblock \emph{arXiv preprint arXiv:2608.20927}, 2026{\natexlab{b}}.
-
 \bibitem[Longpre et~al.(2021)Longpre, Perisetla, Chen, Ramesh, DuBois, and
   Singh]{longpre2021entity}
 Longpre, S., Perisetla, K., Chen, A., Ramesh, N., DuBois, C., and Singh, S.
@@ -99,17 +76,10 @@ Longpre, S., Perisetla, K., Chen, A., Ramesh, N., DuBois, C., and Singh, S.
 \newblock In \emph{Proceedings of EMNLP}, 2021.
 \newblock arXiv:2109.05052.
 
-\bibitem[Marincat(2026)]{2609.11365}
-Marincat, N.
-\newblock Portable semantics, private dialects: Reuse and negative transfer in
-  latent communication between language-model cells.
-\newblock \emph{arXiv preprint arXiv:2609.11365}, 2026.
-
-\bibitem[Mou et~al.(2026)Mou, Wang, Li, He, and Wei]{2605.25421}
-Mou, X., Wang, S., Li, Z., He, Y., and Wei, Z.
-\newblock {HyLaT}: Efficient multi-agent communication via hybrid latent-text
-  protocol.
-\newblock \emph{arXiv preprint arXiv:2605.25421}, 2026.
+\bibitem[Minsky(1986)]{minsky1986society}
+Minsky, M.
+\newblock \emph{The Society of Mind}.
+\newblock Simon and Schuster, New York, 1986.
 
 \bibitem[Peng et~al.(2026)Peng, Zhang, Wang, and Aletras]{2608.13317}
 Peng, Y., Zhang, D.~C., Wang, X., and Aletras, N.
@@ -125,15 +95,16 @@ Pham, C., Liu, B., Yang, Y., Chen, Z., Liu, T., Yuan, J., Plummer, B.~A., Wang,
 \newblock Let models speak ciphers: Multiagent debate through embeddings.
 \newblock \emph{arXiv preprint arXiv:2310.06272}, 2023.
 
-\bibitem[Qu et~al.(2026)Qu, Lu, Chen, Wang, and Lin]{2609.00891}
-Qu, X., Lu, S., Chen, Z., Wang, S., and Lin, T.
-\newblock {CacheBridge}: Efficient cross-model {KV} cache transfer.
-\newblock \emph{arXiv preprint arXiv:2609.00891}, 2026.
-
 \bibitem[Rossi et~al.(2026)Rossi, Raghunath, and Wu]{2605.22863}
 Rossi, M., Raghunath, P., and Wu, E.
 \newblock Latent cache flow: Model-to-model communication without text.
 \newblock \emph{arXiv preprint arXiv:2605.22863}, 2026.
+
+\bibitem[Shannon(1948)]{shannon1948mathematical}
+Shannon, C.~E.
+\newblock A mathematical theory of communication.
+\newblock \emph{Bell System Technical Journal}, 27\penalty0 (3):\penalty0
+  379--423, 1948.
 
 \bibitem[Shi et~al.(2026)Shi, Zhang, Bao, Nelson, and Ye]{2606.20662}
 Shi, K., Zhang, Z., Bao, H., Nelson, C., and Ye, Y.
@@ -149,12 +120,6 @@ Tian, K., Mitchell, E., Zhou, A., Sharma, A., Rafailov, R., Yao, H., Finn, C.,
   confidence scores from language models fine-tuned with human feedback.
 \newblock In \emph{Proceedings of EMNLP}, 2023.
 \newblock arXiv:2305.14975.
-
-\bibitem[Villani(2026)]{2609.25053}
-Villani, S.~P.
-\newblock {LatentPort}: Beyond {KV} cache -- cross-model transfer of recurrent
-  memory in hybrid language models.
-\newblock \emph{arXiv preprint arXiv:2609.25053}, 2026.
 
 \bibitem[Xie et~al.(2024)Xie, Zhang, Chen, Lou, and Su]{xie2023adaptive}
 Xie, J., Zhang, K., Chen, J., Lou, R., and Su, Y.
