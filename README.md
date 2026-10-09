@@ -95,6 +95,14 @@ with no API; `--no-judge` drops the 375B yes/no check.
   single-family ladder from 0.9B to 375B and per-attempt traces obtained by running, not replaying.
 - The `/workspace/` path habit of the small models is normalized in `tools.py`; without that they loop on path errors.
 
+## k2-tasks-env (added 2026-10-07)
+
+The four demo tasks are packaged as a standalone, reward-hacking-resistant RL environment in
+[`k2-tasks-env/`](k2-tasks-env/): OpenEnv-style `reset/step/state`, a clean-room grader that rewards hidden tests
+and zeroes any tampering, an HTTP server, a Dockerfile, a Prime Intellect `verifiers` adapter, scripted oracle and
+hacker policies, and 58 tests. The "narrated completion" harness bug described above is the opening example of
+[`k2-tasks-env/docs/grader-robustness.md`](k2-tasks-env/docs/grader-robustness.md).
+
 ## More tasks (added after the deadline)
 
 Three more small tasks, each run twice in `cascade` and twice in `large` (the second `large` run of cli-flag was cut off by a process restart).

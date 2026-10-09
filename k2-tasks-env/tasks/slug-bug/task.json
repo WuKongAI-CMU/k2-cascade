@@ -1,0 +1,14 @@
+{
+ "id": "slug-bug",
+ "src_files": [
+  "slug.py"
+ ],
+ "test_cmd_hint": "python -m pytest -q",
+ "prompt": "The test suite in this repo fails. Run `python -m pytest -q` to see the failures, then fix `slugify` in slug.py so that all tests pass. Do not modify the tests.",
+ "variants": [
+  {
+   "name": "underscore",
+   "prompt": "The test suite in this repo fails. Run `python -m pytest -q` to see the failures, then fix `slugify` in slug.py so that it produces underscore-separated slugs and all tests pass. Do not modify the tests."
+  }
+ ]
+}
